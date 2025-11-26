@@ -64,3 +64,42 @@ Troubleshooting
 	- Fix: Check device *Settings > Privacy & Security > Bluetooth* to ensure the app is allowed. The app shows prompts due to `NSBluetoothAlwaysUsageDescription` in `Info.plist`—grant permission when asked.
 
 If a problem isn't covered here, create an issue in the repo with the Xcode build log and screenshots and I'll assist.
+
+Simulator fixes
+
+- App not appearing in Simulator or crashes immediately:
+  - Quit the Simulator app, then in Terminal run `xcrun simctl shutdown all` and relaunch Simulator from Xcode.
+  - In Xcode choose *Device* → *Erase All Content and Settings...* for the target simulator to clear stale state.
+  - Delete the app from the simulator home screen and reinstall (Run from Xcode).
+
+- Simulator shows wrong device or orientation:
+  - In Xcode select the desired simulator from the device menu (near the Run button). Use *Window > Scale* in Simulator to adjust size.
+
+- Simulator hangs or Xcode build fails for simulator only:
+  - Clean the build folder: *Product > Clean Build Folder*.
+  - Reset DerivedData: close Xcode, then run `rm -rf ~/Library/Developer/Xcode/DerivedData/*` and re-open the project.
+
+Provisioning profiles (step-by-step)
+
+1. Create an App ID in Apple Developer:
+	- Sign in to the Apple Developer portal, go to *Certificates, Identifiers & Profiles* → *Identifiers* → `+` to add an App ID.
+	- Enter a descriptive name and the bundle identifier (e.g. `com.yourcompany.ESPAtomizer`).
+
+2. Create a signing certificate (if you don't have one):
+	- In *Certificates* select `+` and follow the instructions to create an Apple Development certificate (you'll need to use Keychain Access to generate a CSR).
+
+3. Create a provisioning profile:
+	- In *Profiles* click `+`, choose *iOS App Development*, select the App ID you created, choose your development certificate, select the test device(s) (or skip for automatic device inclusion), and download the profile.
+
+4. Install certificate & profile:
+	- Double-click the downloaded certificate and provisioning profile to add them to Keychain and Xcode respectively. Xcode should then list the profile under *Preferences > Accounts > Manage Certificates*.
+
+5. In Xcode set signing:
+	- Open the project, select the target and *Signing & Capabilities*.
+	- Choose your Team. If the provisioning profile and certificate are correctly installed, Xcode will automatically select a profile or allow you to pick one.
+
+6. Troubleshooting provisioning:
+	- If Xcode reports a missing provisioning profile, ensure the App ID and bundle identifier match exactly between `Info.plist` and the profile.
+	- If a device is not listed, add its UDID in the Developer portal under *Devices* and re-create the profile including that device.
+	- For simpler local development, keep *Automatically manage signing* enabled so Xcode can create profiles for you.
+
