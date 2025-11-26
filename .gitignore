@@ -1,0 +1,39 @@
+﻿# Xcode
+.DS_Store
+build/
+DerivedData/
+*.xcuserstate
+*.xcworkspace/contents.xcworkspacedata
+
+# Swift Package Manager
+.build/
+Packages/
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/Build/
+
+# User settings
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# Swift Package Manager
+Package.resolved
+
+# Xcode Archives
+*.xcarchive
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# Other
+tmp/
+.idea/
+.vscode/
+xcuserdata/
