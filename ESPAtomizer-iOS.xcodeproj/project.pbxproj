@@ -1,142 +1,141 @@
-// !$*UTF8*$!
+// ! Xcode project file for ESPAtomizer-iOS
+// Generated: SwiftUI, iOS 17.0, Bundle ID: com.adamibus.ESPAtomizer-iOS
+// Minimal, but Xcode-compatible
+
 {
-	archiveVersion = 1;
-	classes = {};
-	objectVersion = 50;
-	objects = {
-
-/* Begin PBXProject section */
-		1D6058900D05DD3D006BFB54 /* Project object */ = {
-			isa = PBXProject;
-			attributes = {
-				LastUpgradeCheck = 1300;
-				ORGANIZATIONNAME = "Adamibus";
-			};
-			buildConfigurationList = 1D6058910D05DD3E006BFB54 /* Build configuration list */;
-			compatibilityVersion = "Xcode 12.0";
-			developmentRegion = en;
-			hasScannedForEncodings = 0;
-			knownRegions = (
-				en,
-			);
-			mainGroup = 1D6058920D05DD3E006BFB54;
-			projectDirPath = "";
-			projectRoot = "";
-			targets = (
-				1D6058930D05DD3E006BFB54 /* ESPAtomizer_iOSApp */,
-			);
-		};
-/* End PBXProject section */
-
-/* Begin PBXGroup section */
-		1D6058920D05DD3E006BFB54 = {
-			isa = PBXGroup;
-			children = (
-				1D6058940D05DD3E006BFB54 /* AtomizerViewModel.swift */,
-				1D6058950D05DD3E006BFB54 /* ContentView.swift */,
-				1D6058960D05DD3E006BFB54 /* TemperatureChartView.swift */,
-				2E6058A00D05DD3E006BFB54 /* Assets.xcassets */,
-			);
-			name = "ESPAtomizer-iOS";
-			sourceTree = "<group>";
-		};
-/* End PBXGroup section */
+  archiveVersion = 1;
+  classes = {};
+  objectVersion = 55;
+  objects = {
 
 /* Begin PBXFileReference section */
-		1D6058940D05DD3E006BFB54 /* AtomizerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AtomizerViewModel.swift"; sourceTree = "<group>"; };
-		1D6058950D05DD3E006BFB54 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentView.swift"; sourceTree = "<group>"; };
-		1D6058960D05DD3E006BFB54 /* TemperatureChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TemperatureChartView.swift"; sourceTree = "<group>"; };
-		2E6058A00D05DD3E006BFB54 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
+    F1A1B1C1D1E1F1A1B1C1D1E1 /* ESPAtomizerApp.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ESPAtomizerApp.swift"; sourceTree = "<group>"; };
+    F2A2B2C2D2E2F2A2B2C2D2E2 /* ContentView.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentView.swift"; sourceTree = "<group>"; };
+    F3A3B3C3D3E3F3A3B3C3D3E3 /* Info.plist */ = { isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXNativeTarget section */
-		1D6058930D05DD3E006BFB54 /* ESPAtomizer_iOSApp */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 1D6058970D05DD3E006BFB54 /* Build configuration list */;
-			buildPhases = (
-				1D6058980D05DD3E006BFB54 /* Sources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = "ESPAtomizer_iOSApp";
-			productName = "ESPAtomizer_iOSApp";
-			productType = "com.apple.product-type.application";
-		};
-/* End PBXNativeTarget section */
+/* Begin PBXGroup section */
+    MAIN_GROUP = {
+      isa = PBXGroup;
+      children = (
+        F1A1B1C1D1E1F1A1B1C1D1E1 /* ESPAtomizerApp.swift */,
+        F2A2B2C2D2E2F2A2B2C2D2E2 /* ContentView.swift */,
+        F3A3B3C3D3E3F3A3B3C3D3E3 /* Info.plist */,
+      );
+      path = "";
+      sourceTree = "<group>";
+    };
+/* End PBXGroup section */
 
 /* Begin PBXSourcesBuildPhase section */
-		1D6058980D05DD3E006BFB54 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				1D6058990D05DD3E006BFB54 /* AtomizerViewModel.swift in Sources */,
-				1D60589A0D05DD3E006BFB54 /* ContentView.swift in Sources */,
-				1D60589B0D05DD3E006BFB54 /* TemperatureChartView.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+    SOURCES_BUILD_PHASE = {
+      isa = PBXSourcesBuildPhase;
+      buildActionMask = 2147483647;
+      files = (
+        FILE_REF_1,
+        FILE_REF_2,
+      );
+      runOnlyForDeploymentPostprocessing = 0;
+    };
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXResourcesBuildPhase section */
+    RESOURCES_BUILD_PHASE = {
+      isa = PBXResourcesBuildPhase;
+      buildActionMask = 2147483647;
+      files = (
+        FILE_REF_3,
+      );
+      runOnlyForDeploymentPostprocessing = 0;
+    };
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXBuildFile section */
-		1D6058990D05DD3E006BFB54 /* AtomizerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6058940D05DD3E006BFB54 /* AtomizerViewModel.swift */; };
-		1D60589A0D05DD3E006BFB54 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6058950D05DD3E006BFB54 /* ContentView.swift */; };
-		1D60589B0D05DD3E006BFB54 /* TemperatureChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6058960D05DD3E006BFB54 /* TemperatureChartView.swift */; };
+    FILE_REF_1 = { isa = PBXBuildFile; fileRef = F1A1B1C1D1E1F1A1B1C1D1E1; };
+    FILE_REF_2 = { isa = PBXBuildFile; fileRef = F2A2B2C2D2E2F2A2B2C2D2E2; };
+    FILE_REF_3 = { isa = PBXBuildFile; fileRef = F3A3B3C3D3E3F3A3B3C3D3E3; };
 /* End PBXBuildFile section */
 
+/* Begin PBXNativeTarget section */
+    TARGET_UUID = {
+      isa = PBXNativeTarget;
+      buildConfigurationList = BUILD_CONFIG_LIST;
+      buildPhases = (
+        SOURCES_BUILD_PHASE,
+        RESOURCES_BUILD_PHASE,
+      );
+      buildRules = ();
+      dependencies = ();
+      name = "ESPAtomizer-iOS";
+      productName = "ESPAtomizer-iOS";
+      productReference = PRODUCT_FILE_REF;
+      productType = "com.apple.product-type.application";
+    };
+/* End PBXNativeTarget section */
+
 /* Begin XCBuildConfiguration section */
-		1D60589C0D05DD3E006BFB54 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = "ESPAtomizer_iOSApp";
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-			};
-			name = Debug;
-		};
-		1D60589D0D05DD3E006BFB54 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = "ESPAtomizer_iOSApp";
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-			};
-			name = Release;
-		};
+    DEBUG_CONFIG = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+        ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+        DEVELOPMENT_TEAM = "";
+        INFO_PLIST_FILE = "Info.plist";
+        IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+        PRODUCT_BUNDLE_IDENTIFIER = "com.adamibus.ESPAtomizer-iOS";
+        SWIFT_VERSION = 5.0;
+      };
+      name = Debug;
+    };
+    RELEASE_CONFIG = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+        ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+        DEVELOPMENT_TEAM = "";
+        INFO_PLIST_FILE = "Info.plist";
+        IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+        PRODUCT_BUNDLE_IDENTIFIER = "com.adamibus.ESPAtomizer-iOS";
+        SWIFT_VERSION = 5.0;
+      };
+      name = Release;
+    };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1D6058910D05DD3E006BFB54 /* Build configuration list */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				1D60589C0D05DD3E006BFB54 /* Debug */,
-				1D60589D0D05DD3E006BFB54 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-						ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-						IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-						DEVELOPMENT_TEAM = YOUR_TEAM_ID;
-						CODE_SIGN_STYLE = Automatic;
-						CODE_SIGN_IDENTITY = "Apple Development";
-						SWIFT_VERSION = 5.0;
-			defaultConfigurationName = Release;
-		};
-		1D6058970D05DD3E006BFB54 /* Build configuration list */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				1D60589C0D05DD3E006BFB54 /* Debug */,
-				1D60589D0D05DD3E006BFB54 /* Release */,
-						ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-						IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-						DEVELOPMENT_TEAM = YOUR_TEAM_ID;
-						CODE_SIGN_STYLE = Automatic;
-						CODE_SIGN_IDENTITY = "Apple Development";
-						SWIFT_VERSION = 5.0;
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
+    BUILD_CONFIG_LIST = {
+      isa = XCConfigurationList;
+      buildConfigurations = (
+        DEBUG_CONFIG,
+        RELEASE_CONFIG,
+      );
+      defaultConfigurationIsVisible = 0;
+      defaultConfigurationName = Release;
+    };
 /* End XCConfigurationList section */
 
-	};
-	rootObject = 1D6058900D05DD3D006BFB54 /* Project object */;
+/* Product reference (application) */
+    PRODUCT_FILE_REF = {
+      isa = PBXFileReference;
+      lastKnownFileType = "wrapper.application";
+      path = "ESPAtomizer-iOS.app";
+      sourceTree = BUILT_PRODUCTS_DIR;
+    };
+
+    PBXProject_MAIN = {
+      isa = PBXProject;
+      attributes = {
+        LastUpgradeCheck = 1430;
+        ORGANIZATIONNAME = "Adamibus";
+      };
+      buildConfigurationList = BUILD_CONFIG_LIST;
+      compatibilityVersion = "Xcode 14.0";
+      mainGroup = MAIN_GROUP;
+      productRefGroup = MAIN_GROUP;
+      projectDirPath = "";
+      projectRoot = "";
+      targets = (
+        TARGET_UUID,
+      );
+    };
+  };
+  rootObject = PBXProject_MAIN;
 }
