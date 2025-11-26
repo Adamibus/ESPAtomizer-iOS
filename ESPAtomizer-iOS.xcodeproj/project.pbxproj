@@ -35,6 +35,7 @@
 				1D6058940D05DD3E006BFB54 /* AtomizerViewModel.swift */,
 				1D6058950D05DD3E006BFB54 /* ContentView.swift */,
 				1D6058960D05DD3E006BFB54 /* TemperatureChartView.swift */,
+				2E6058A00D05DD3E006BFB54 /* Assets.xcassets */,
 			);
 			name = "ESPAtomizer-iOS";
 			sourceTree = "<group>";
@@ -45,6 +46,7 @@
 		1D6058940D05DD3E006BFB54 /* AtomizerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AtomizerViewModel.swift"; sourceTree = "<group>"; };
 		1D6058950D05DD3E006BFB54 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentView.swift"; sourceTree = "<group>"; };
 		1D6058960D05DD3E006BFB54 /* TemperatureChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TemperatureChartView.swift"; sourceTree = "<group>"; };
+		2E6058A00D05DD3E006BFB54 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXNativeTarget section */
@@ -88,6 +90,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "ESPAtomizer_iOSApp";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 			};
 			name = Debug;
 		};
@@ -95,6 +98,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "ESPAtomizer_iOSApp";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 			};
 			name = Release;
 		};
