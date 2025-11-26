@@ -1,5 +1,0 @@
-1. add ble feeaturres such as remeber deviece are restore connection: ie behavior like any other ble devicce on ios
-
-2. If you want the device to actively clear stored bonds (useful for a "Forget device" menu option), I can add a handler that calls NimBLE's bond deletion API (e.g., security manager methods) — I didn't include that here to avoid using a less-certain API name without confirming availability in your NimBLE version.
-
-3. 

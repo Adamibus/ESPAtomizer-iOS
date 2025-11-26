@@ -1,0 +1,126 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXProject section */
+		1D6058900D05DD3D006BFB54 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1300;
+				ORGANIZATIONNAME = "Adamibus";
+			};
+			buildConfigurationList = 1D6058910D05DD3E006BFB54 /* Build configuration list */;
+			compatibilityVersion = "Xcode 12.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 1D6058920D05DD3E006BFB54;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				1D6058930D05DD3E006BFB54 /* ESPAtomizer_iOSApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXGroup section */
+		1D6058920D05DD3E006BFB54 = {
+			isa = PBXGroup;
+			children = (
+				1D6058940D05DD3E006BFB54 /* AtomizerViewModel.swift */,
+				1D6058950D05DD3E006BFB54 /* ContentView.swift */,
+				1D6058960D05DD3E006BFB54 /* TemperatureChartView.swift */,
+			);
+			name = "ESPAtomizer-iOS";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXFileReference section */
+		1D6058940D05DD3E006BFB54 /* AtomizerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AtomizerViewModel.swift"; sourceTree = "<group>"; };
+		1D6058950D05DD3E006BFB54 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentView.swift"; sourceTree = "<group>"; };
+		1D6058960D05DD3E006BFB54 /* TemperatureChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TemperatureChartView.swift"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXNativeTarget section */
+		1D6058930D05DD3E006BFB54 /* ESPAtomizer_iOSApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1D6058970D05DD3E006BFB54 /* Build configuration list */;
+			buildPhases = (
+				1D6058980D05DD3E006BFB54 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "ESPAtomizer_iOSApp";
+			productName = "ESPAtomizer_iOSApp";
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1D6058980D05DD3E006BFB54 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1D6058990D05DD3E006BFB54 /* AtomizerViewModel.swift in Sources */,
+				1D60589A0D05DD3E006BFB54 /* ContentView.swift in Sources */,
+				1D60589B0D05DD3E006BFB54 /* TemperatureChartView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXBuildFile section */
+		1D6058990D05DD3E006BFB54 /* AtomizerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6058940D05DD3E006BFB54 /* AtomizerViewModel.swift */; };
+		1D60589A0D05DD3E006BFB54 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6058950D05DD3E006BFB54 /* ContentView.swift */; };
+		1D60589B0D05DD3E006BFB54 /* TemperatureChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6058960D05DD3E006BFB54 /* TemperatureChartView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin XCBuildConfiguration section */
+		1D60589C0D05DD3E006BFB54 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "ESPAtomizer_iOSApp";
+			};
+			name = Debug;
+		};
+		1D60589D0D05DD3E006BFB54 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "ESPAtomizer_iOSApp";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1D6058910D05DD3E006BFB54 /* Build configuration list */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1D60589C0D05DD3E006BFB54 /* Debug */,
+				1D60589D0D05DD3E006BFB54 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1D6058970D05DD3E006BFB54 /* Build configuration list */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1D60589C0D05DD3E006BFB54 /* Debug */,
+				1D60589D0D05DD3E006BFB54 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = 1D6058900D05DD3D006BFB54 /* Project object */;
+}
