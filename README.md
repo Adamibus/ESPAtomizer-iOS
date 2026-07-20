@@ -20,6 +20,25 @@ ESPAtomizer is a multi-part project for a compact atomizer controller built arou
 
 If you want to validate the firmware and config without hardware, the repo includes utility scripts under `tools/` such as the smoke check and config lint scripts.
 
+## Safe Git workflow
+
+If you are working from this repo, use the tracked branch on GitHub and keep pulls rebased:
+
+```powershell
+git branch --set-upstream-to=origin/main main
+git config pull.rebase true
+git config push.default upstream
+```
+
+Typical update flow:
+
+```powershell
+git add -A
+git commit -m "Describe your change"
+git pull --rebase
+git push
+```
+
 ## Notes
 
 This repo contains active development files, backups, and generated artifacts. Keep that in mind when reviewing diffs or preparing releases.
