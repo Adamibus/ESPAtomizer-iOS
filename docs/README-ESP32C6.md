@@ -1,28 +1,27 @@
-# ESP PID Temperature Controller — Seeed Studio XIAO ESP32C6
+# ESP PID Temperature Controller — Seeed Studio XIAO ESP32C6 with ADS1115 I2C Thermocouple
 
-This wiring guide targets the Seeed Studio XIAO ESP32C6 (Arduino core v3.x). It matches the current sketch at `ESPAtomizer/ESPAtomizer.ino`. The ESP, OLED, and a thermocouple breakout (MAX6675) are intended to be socket‑mounted to save cost and allow easy replacement.
+This wiring guide targets the Seeed Studio XIAO ESP32C6 (Arduino core v3.x) with ADS1115 I2C-based thermocouple measurement. It matches the sketch at `ESPAtomizer/ESPAtomizer.ino` configured for the PCB v3 design.
 
-- Sensor: K‑type thermocouple via MAX6675 (SPI‑like) on 3 lines: SCK, CS, SO. 3.3 V logic. Enabled by default (`USE_MAX6675=1`); install a MAX6675 library.
-- Output: PWM to MOSFET (heater) at ~1 kHz (disabled by default for safety)
+- Sensor: K‑type thermocouple via ADS1115 16-bit I2C ADC (0x48). 3.3 V native operation. Enabled by default (`USE_ADS1115=1`).
+- Output: PWM to MOSFET (heater) at ~200 Hz (disabled by default for safety)
 - Controls: Rotary encoder with push switch (Adafruit PID 377 / EC11‑style) for setpoint and mode/power
 - Display: Optional SSD1306 I2C OLED (128×64), address 0x3C typical (silk "0x78" = 0x3C 7‑bit)
+- **Power:** 3.3V design (no external 5V requirement). All peripherals share 3.3V rail.
 
 ## Pin Assignments (by GPIO)
 
 The sketch uses explicit GPIO numbers (printed at boot). Wire to these GPIOs, not Dx labels:
 
-| Function              | GPIO   | Type   | Notes |
-|-----------------------|--------|--------|-------|
-| Encoder A             | GPIO0  | Input  | `ENC_PIN_A` (INPUT_PULLUP) |
-| Encoder B             | GPIO1  | Input  | `ENC_PIN_B` (INPUT_PULLUP) |
-| Encoder Switch (SW)   | GPIO2  | Input  | `BUTTON_PIN`/`ENC_PIN_SW` (INPUT_PULLUP) |
-| OLED SDA              | GPIO22 | I2C    | primary I2C SDA |
-| OLED SCL              | GPIO23 | I2C    | primary I2C SCL |
-| PWM output (MOSFET)   | GPIO16 | PWM    | `OUTPUT_PIN` (LEDC pin‑API in Arduino 3.x) |
-| MAX6675 SCK           | GPIO18 | SPI    | Configurable (D10) |
-| MAX6675 CS            | GPIO20 | SPI    | Configurable (D9) |
-| MAX6675 SO            | GPIO19 | SPI    | MISO, configurable (D8) |
-| Battery sense (opt.)  | GPIO21 | ADC    | `BAT_PIN` via divider (D3), enabled by default |
+| Function              | GPIO   | Header Location | Type   | Notes |
+|-----------------------|--------|----------------|--------|-------|
+| Battery sense         | GPIO0  | Left pin 1 (D0) | ADC    | `BAT_PIN` (ADC1_CH0) via divider |
+| Unused (was AD8495)   | GPIO2  | Left pin 3 (D2) | — | Thermocouple now via I2C ADS1115 |
+| PWM output (MOSFET)   | GPIO16 | Left pin 7 (D6) | PWM    | `OUTPUT_PIN` (LEDC pin‑API) |
+| Encoder A             | GPIO17 | Right pin 8 (D7/RX) | Input  | `ENC_PIN_A` (INPUT_PULLUP) |
+| **I2C SCL (shared)**  | GPIO19 | Right pin 9 (D8/SCK) | I2C    | I2C clock (OLED 0x3C + ADS1115 0x48, ~400 kHz) |
+| **I2C SDA (shared)**  | GPIO20 | Right pin 10 (D9/MISO) | I2C    | I2C data (OLED + ADS1115 thermocouple) |
+| Encoder Switch (SW)   | GPIO22 | Left pin 5 (D4) | Input  | `ENC_PIN_SW` (INPUT_PULLUP) |
+| Encoder B             | GPIO23 | Left pin 6 (D5) | Input  | `ENC_PIN_B` (INPUT_PULLUP) |
 
 Board power and rails:
 - 3V3 pin → 3.3 V output
@@ -47,15 +46,15 @@ Legend (colors in the diagram):
 ### Quick wiring checklist
 
 Rotary encoder (Adafruit 377 / EC11 with push switch):
-- A → GPIO0 (D0)
-- B → GPIO1 (D1)
+- A → GPIO17 (D7/RX, right header pin 8)
+- B → GPIO23 (D5, left header pin 6)
 - C (common) → GND
-- SW → GPIO2 (D2); the other SW terminal → GND
+- SW → GPIO22 (D4, left header pin 5); the other SW terminal → GND
 - No VCC needed (mechanical). Firmware enables internal pull‑ups; optional 100 nF caps from C→A and C→B improve debounce.
 
 ### Encoder quick test
 - Upload `ESPAtomizer/ESPAtomizer.ino` and open Serial Monitor @ 115200.
-- On boot you should see pin printouts: `Pins: TEMP=0(D0), OUT=16(D6), ENC_A=0(D0), ENC_B=1(D1), ENC_SW=2(D2), SDA=22(D4), SCL=23(D5), MAX SCK=18(D10), CS=20(D9), SO=19(D8), BAT=21(D3)`.
+- On boot you should see pin printouts: `Pins: AD8495=2(ADC1_CH2/D2), OUT=16(D6), ENC_A=17(D7), ENC_B=23(D5), ENC_SW=22(D4), SDA=20(D9), SCL=19(D8), BAT=0(ADC1_CH0/D0)`.
 - Rotate the encoder: you should see `[ENC] det=±1 => Setpoint=...` messages and the OLED target changing.
 - Press/release SW: short press toggles Power; long press toggles PID mode (watch OLED tag [AUTO]/[MAN]). Long press again enters menu with modes: AUTO, MAN, U1, U2, Config, Exit.
 - In Config mode (select via menu), encoder adjusts default setpoint (persisted in RTC); short press exits.
@@ -73,9 +72,10 @@ Rotary encoder (Adafruit 377 / EC11 with push switch):
 OLED (SSD1306 128×64) on I2C:
 - VCC → 3.3V
 - GND → GND
-- SDA → GPIO22
-- SCL → GPIO23
+- SDA → GPIO20 (D9/MISO, right header pin 10) [shared with ADS1115]
+- SCL → GPIO19 (D8/SCK, right header pin 9) [shared with ADS1115]
 - Address: 0x3C typical. Many boards print 8‑bit addresses on silk ("0x78" for write) — this corresponds to 7‑bit 0x3C.
+- **ADS1115 I2C Bus:** The OLED and ADS1115 thermocouple IC share the same I2C bus (GPIO19/20) at different addresses (0x3C vs 0x48) — no conflicts.
 - If bus idles at ~0 V, add 4.7k pull‑ups from SDA→3.3V and SCL→3.3V (some modules omit pull‑ups).
 
 MOSFET output (heater at ~4 V supply):
@@ -138,21 +138,48 @@ Caveats:
 - Use wide copper/wires for the heater path (see PCB notes below).
  - If you use pogo/test pads (TP4/TP5) they are intended as service/debug access points — for permanent battery wiring use the JST‑PH connector (`J3`) on the board edge. Remember BAT is bidirectional: with USB attached the charger circuitry may source current to a LiPo, and with LiPo attached those pads will carry battery current. Do not connect BAT pads to 5 V (VBUS).
 
-## Thermocouple (MAX6675)
+## Thermocouple (ADS1115 I2C)
 
-Primary temperature sensor is a K‑type thermocouple using a MAX6675 module (3.3 V) for 150–400 °C operation. The MAX6675 uses a simple SPI‑like interface without MOSI.
+Primary temperature sensor is a K‑type thermocouple using an ADS1115 16-bit I2C ADC (address 0x48) for 150–400 °C operation. The ADS1115 shares the I2C bus with the OLED display (no additional pins required).
 
-- Power: VCC=3.3 V, GND=GND
-- Signals: SCK, CS, SO (MISO)
-- Suggested default GPIOs in firmware: SCK=GPIO18 (D10), CS=GPIO20 (D9), SO=GPIO19 (D8) (changeable via defines)
+- **Power:** VCC=3.3 V, GND=GND
+- **I2C Interface:** SDA=GPIO20, SCL=GPIO19 (shared with OLED at different address 0x3C)
+- **Thermocouple Input:** AIN0 and AIN1 pins (differential measurement, K-type)
+- **I2C Address:** 0x48 (ADDR pin tied to GND; address configurable via ADDR pin)
 
 Firmware:
-- Set `#define USE_MAX6675 1` near the top of the sketch.
-- Install a MAX6675 library via Arduino Library Manager (e.g., “MAX6675” by Adafruit).
+- Set `#define USE_ADS1115 1` near the top of the sketch.
+- Set `#define ADS1115_I2C_ADDR 0x48` for default configuration.
+- No external libraries required (uses Arduino Wire library).
+
+## Software-Only Testing (no board)
+- Quick tools overview: see [tools/README.md](../tools/README.md)
+- Run the static smoke check to validate the sketch structure:
+  - powershell -NoProfile -ExecutionPolicy Bypass -File "c:\Users\Adam Dinjian\OneDrive\Projects\Coding\ESPAtomizer\tools\smoke_check.ps1"
+- Lint key config values and constraints:
+  - powershell -NoProfile -ExecutionPolicy Bypass -File "c:\Users\Adam Dinjian\OneDrive\Projects\Coding\ESPAtomizer\tools\config_lint.ps1"
+- Simulate PID logic without hardware:
+  - powershell -NoProfile -ExecutionPolicy Bypass -File "c:\Users\Adam Dinjian\OneDrive\Projects\Coding\ESPAtomizer\tools\pid_sim.ps1" -Setpoint 180 -Kp 8 -Ki 0.3 -Kd 40 -DurationMs 15000 -StepMs 100 -Ambient 22 -PwmMax 1023
+- To exercise firmware logic without I/O, enable TEST_MODE:
+  - Edit [ESPAtomizer/config.h](../ESPAtomizer/config.h) and set `#define TEST_MODE 1`.
+  - Effects: simulated temperature in `readTemperatureC()`, logging-only `applyOutput()`, and simulated battery in [ESPAtomizer/battery.h](../ESPAtomizer/battery.h).
+
+Connection:
+- U1 pin 1 (ADDR) → GND (sets address to 0x48)
+- U1 pin 2 (GND) → Ground plane
+- U1 pin 3 (SCL) → GPIO19 (I2C clock, shared with OLED)
+- U1 pin 4 (SDA) → GPIO20 (I2C data, shared with OLED)
+- U1 pin 5 (AIN0) → Thermocouple positive (red wire)
+- U1 pin 6 (AIN1) → Thermocouple negative/reference (yellow wire)
+- U1 pin 8 (VDD) → 3.3V with 100nF bypass cap to GND
+
+**Multi-master I2C:** Both OLED (0x3C) and ADS1115 (0x48) operate simultaneously without conflicts.
 
 Notes:
 - Keep thermocouple leads twisted and away from heater switching traces to reduce noise.
-- Many MAX6675 breakout boards label pins as: GND, VCC, SCK, CS, SO. Match that order on the 1×5 socket (J4).
+- No SPI pins required — thermocouple measurement is entirely over I2C.
+- 16-bit resolution provides better accuracy than 8-bit analog ADC.
+- Internal reference and amplification — no external reference circuit needed (unlike AD8495 design).
 
 
 ## OLED I2C Address Note
@@ -164,38 +191,39 @@ Notes:
 The sketch uses explicit GPIO numbers and also prints them at boot, for example:
 
 ```
-Pins: TEMP=0(D0), OUT=16(D6), ENC_A=0(D0), ENC_B=1(D1), ENC_SW=2(D2), SDA=22(D4), SCL=23(D5), MAX SCK=18(D10), CS=20(D9), SO=19(D8), BAT=21(D3)
+Pins: BAT=0(D0), ENC_A=17(D7), ENC_B=23(D5), ENC_SW=22(D4), OUT=16(D6), SDA=20(D9), SCL=19(D8), ADS1115=0x48(I2C)
 ```
 
 ## Pins summary (Dx ↔ GPIO)
 
 Left side (top→bottom):
-- D0 → GPIO0: Encoder A, also TEMP ADC node
-- D1 → GPIO1: Encoder B
-- D2 → GPIO2: Encoder SW (active‑low)
-- D3 → GPIO21: Battery monitor ADC (via divider)
-- D4 → GPIO22: I2C SDA (OLED)
-- D5 → GPIO23: I2C SCL (OLED)
+- D0 → GPIO0: Battery monitor ADC (via divider)
+- D1 → GPIO1: Available
+- D2 → GPIO2: Unused (thermocouple via I2C ADS1115)
+- D3 → GPIO21: Not used
+- D4 → GPIO22: Encoder switch (active‑low)
+- D5 → GPIO23: Encoder B
 - D6 → GPIO16: PWM output to MOSFET gate
 
 Right side (top→bottom):
-- 5V (VBUS)
+- 5V (VBUS, not used in 3.3V design)
 - ⏚ GND
 - 3V3
-- D10 → GPIO18: MAX6675 SCK
-- D9  → GPIO20: MAX6675 CS
-- D8  → GPIO19: MAX6675 SO (MISO)
-- D7  → GPIO17: spare
+- D10 → GPIO18: Available
+- D9  → GPIO20: I2C SDA (OLED 0x3C + ADS1115 0x48)
+- D8  → GPIO19: I2C SCL (OLED + ADS1115)
+- D7  → GPIO17: Encoder A
 
 Use these GPIO numbers when wiring; don't rely on Dx labels, which vary by core/board definitions.
 
 Known‑good GPIOs matching the current sketch:
-- `ENC_PIN_A = GPIO0`
-- `ENC_PIN_B = GPIO1`
-- `ENC_PIN_SW`/`BUTTON_PIN = GPIO2`
-- I2C: `SDA=GPIO22`, `SCL=GPIO23`
-- `OUTPUT_PIN = GPIO16`
-- MAX6675: `SCK=GPIO18 (D10)`, `CS=GPIO20 (D9)`, `SO=GPIO19 (D8)`
+- `BAT_PIN = GPIO0` (battery ADC)
+- `ENC_PIN_A = GPIO17`
+- `ENC_PIN_B = GPIO23`
+- `ENC_PIN_SW = GPIO22`
+- I2C: `SDA=GPIO20`, `SCL=GPIO19` (shared OLED + ADS1115)
+- `OUTPUT_PIN = GPIO16` (heater PWM)
+- ADS1115: I2C address `0x48` (on GPIO19/20 I2C bus)
 
 ## Safety
 - Start with heater supply disconnected; verify the MAX6675 reads ~room temp and setpoint changes with the encoder.

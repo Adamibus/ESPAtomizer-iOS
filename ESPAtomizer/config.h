@@ -1,23 +1,56 @@
 // Centralized configuration for ESPAtomizer
 // Edit these values to change board/pin/feature configuration
+// Supports both XIAO ESP32-C3 and XIAO ESP32-C6 (interchangeable)
 
 #ifndef ESPATOMIZER_CONFIG_H
 #define ESPATOMIZER_CONFIG_H
 
+// Board Selection (C3 and C6 are pin-compatible and use the same firmware)
+// Set BOARD_TYPE at compile time: -DBOARD_TYPE=BOARD_XIAO_ESP32_C3 or -DBOARD_TYPE=BOARD_XIAO_ESP32_C6
+// If not specified, firmware will auto-detect based on Arduino board selection
+#ifndef BOARD_TYPE
+  #if defined(ARDUINO_XIAO_ESP32C3)
+    #define BOARD_TYPE BOARD_XIAO_ESP32_C3
+  #elif defined(ARDUINO_XIAO_ESP32C6)
+    #define BOARD_TYPE BOARD_XIAO_ESP32_C6
+  #else
+    // Default to C3 if not detected
+    #define BOARD_TYPE BOARD_XIAO_ESP32_C3
+  #endif
+#endif
+
+#define BOARD_XIAO_ESP32_C3 3
+#define BOARD_XIAO_ESP32_C6 6
+
 // Features
 #ifndef USE_BLE
-#define USE_BLE 1
+#define USE_BLE 0
 #endif
 #ifndef USE_WIFI
 #define USE_WIFI 0
 #endif
-#ifndef USE_MAX6675
-#define USE_MAX6675 1
+
+// Compile-time test mode: when set to 1, hardware I/O is stubbed and
+// simulated values are used for temperature and battery to enable logic
+// smoke-testing without a device.
+#ifndef TEST_MODE
+#define TEST_MODE 0
 #endif
 
 // Initial power-on state (0 = off, 1 = on). Defineable at build time.
 #ifndef INIT_POWER_ON
 #define INIT_POWER_ON 0
+#endif
+
+// Safety features (disable for development)
+#ifndef ENABLE_WATCHDOG
+#define ENABLE_WATCHDOG 1
+#endif
+#ifndef ENABLE_THERMAL_SAFETY
+#define ENABLE_THERMAL_SAFETY 1
+#endif
+#ifndef ENABLE_RTC_PERSISTENCE
+#define ENABLE_RTC_PERSISTENCE 1
 #endif
 
 // OLED
@@ -34,14 +67,11 @@
 #define OLED_I2C_ADDR 0x3C
 #endif
 #ifndef OLED_SDA
-// OLED SDA is connected to the schematic net labeled SDA -> GPIO2 per the
-// latest schematic/gerber mapping.
-#define OLED_SDA 2
+// Use board-defined I2C pins for portability across XIAO C3/C6
+#define OLED_SDA SDA
 #endif
 #ifndef OLED_SCL
-// OLED SCL is connected to the schematic net labeled SCL -> GPIO1 per the
-// latest schematic/gerber mapping.
-#define OLED_SCL 1
+#define OLED_SCL SCL
 #endif
 
 // Convenience aliases for Seeed XIAO D-pin labels -> GPIO numbers
@@ -57,20 +87,6 @@
 #endif
 #ifndef D10_PIN
 #define D10_PIN 18 // labeled D10 on XIAO module (GPIO18 / MOSI)
-#endif
-
-// MAX6675 (thermocouple) pin defaults
-// These use the Dn aliases above so you can override either the Dn aliases
-// or the MAX6675_* macros directly at build time (e.g. -DMAX6675_SCK_PIN=19
-// or -DD10_PIN=19). The PCB routes MAX_SCK->GPIO18, MAX_CS->GPIO20, MAX_SO->GPIO19.
-#ifndef MAX6675_SCK_PIN
-#define MAX6675_SCK_PIN D10_PIN // default: D10 (GPIO18)
-#endif
-#ifndef MAX6675_CS_PIN
-#define MAX6675_CS_PIN D9_PIN  // default: D9  (GPIO20)
-#endif
-#ifndef MAX6675_SO_PIN
-#define MAX6675_SO_PIN D8_PIN  // default: D8  (GPIO19 / MISO)
 #endif
 
 // Composite module U2 (XIAO) left-row pad -> GPIO mapping (footprint-accurate)
@@ -117,15 +133,18 @@
 
 // PWM / Output
 #ifndef OUTPUT_PIN
-// MOSFET gate (PWM output) routed to the schematic net MOSFET_GATE which
-// is connected to the module pad mapped to GPIO0 in the current schematic.
-#define OUTPUT_PIN 0
+// MOSFET gate (PWM output). Use the footprint-mapped left-row pin 7 (U2 pad7 -> GPIO16)
+// This keeps the output tied to the physical socket mapping and avoids boot/strap pins.
+#define OUTPUT_PIN LEFT_ROW_PIN_7
 #endif
 #ifndef PWM_FREQ
 #define PWM_FREQ 200
 #endif
 #ifndef PWM_RES_BITS
 #define PWM_RES_BITS 10
+#endif
+#ifndef PWM_MAX
+#define PWM_MAX ((1U << PWM_RES_BITS) - 1U)
 #endif
 #ifndef RELAY_MODE
 #define RELAY_MODE 0
@@ -136,16 +155,14 @@
 #define USE_ENCODER 1
 #endif
 #ifndef ENC_PIN_A
-// Encoder A/B/SW nets are wired to module pads that map to GPIO16/23/22
-// respectively in the current schematic (see PCB gerber). Map them explicitly
-// so firmware follows the schematic wiring.
-#define ENC_PIN_A 16
+// Prefer D1/D2/D3 for encoder to avoid boot/strap pins and UART TX
+#define ENC_PIN_A D1
 #endif
 #ifndef ENC_PIN_B
-#define ENC_PIN_B 23
+#define ENC_PIN_B D2
 #endif
 #ifndef ENC_PIN_SW
-#define ENC_PIN_SW 22
+#define ENC_PIN_SW D3
 #endif
 #ifndef ENC_EDGES_PER_DETENT
 #define ENC_EDGES_PER_DETENT 2
@@ -156,14 +173,32 @@
 #ifndef ENC_DIR
 #define ENC_DIR -1
 #endif
+#ifndef ENC_MENU_STEP_EDGES
+#define ENC_MENU_STEP_EDGES 4
+#endif
+#ifndef ENC_MAN_STEP_PCT
+#define ENC_MAN_STEP_PCT 5
+#endif
+#ifndef ENC_STEP_SCALE
+#define ENC_STEP_SCALE 1.0
+#endif
+#ifndef ENC_EXTREME_DELTA_C
+#define ENC_EXTREME_DELTA_C 100.0  // Extreme change: require confirmation for >100C jumps
+#endif
+#ifndef ENC_CONFIRM_TIMEOUT_MS
+#define ENC_CONFIRM_TIMEOUT_MS 5000UL  // Auto-cancel confirmation after 5 seconds
+#endif
+#ifndef ENC_RATE_LIMIT_MS
+#define ENC_RATE_LIMIT_MS 50  // Limit encoder input to one step per 50ms
+#endif
 
 // Battery
 #ifndef USE_BAT
 #define USE_BAT 1
 #endif
 #ifndef BAT_PIN
-// Battery ADC net is mapped to GPIO21 (unchanged).
-#define BAT_PIN 21
+// Use analog pin macro for portability. A0 maps to ADC1 on both C3 and C6.
+#define BAT_PIN A0
 #endif
 #ifndef BAT_R1
 #define BAT_R1 100000.0
@@ -183,6 +218,93 @@
 #ifndef BAT_CUTOFF_V
 #define BAT_CUTOFF_V 3.30
 #endif
+#ifndef BAT_LOW_WARNING_V
+#define BAT_LOW_WARNING_V 3.50
+#endif
+#ifndef BAT_HYSTERESIS_V
+#define BAT_HYSTERESIS_V 0.20
+#endif
+#ifndef CHARGER_REMOVED_WINDOW_MS
+#define CHARGER_REMOVED_WINDOW_MS 5000UL
+#endif
+#ifndef CHARGER_RAMP_DOWN_STEPS
+#define CHARGER_RAMP_DOWN_STEPS 10
+#endif
+#ifndef MAX_CONTINUOUS_RUN_MS
+#define MAX_CONTINUOUS_RUN_MS 300000UL
+#endif
+#ifndef MAX_PWM_RAMP_RATE
+#define MAX_PWM_RAMP_RATE 50.0
+#endif
+#ifndef THERMAL_RUNAWAY_TEMP_C
+#define THERMAL_RUNAWAY_TEMP_C 320.0
+#endif
+#ifndef THERMAL_RUNAWAY_MARGIN_C
+#define THERMAL_RUNAWAY_MARGIN_C 50.0  // Margin above setpoint before thermal runaway fault
+#endif
+#ifndef MAX_PWM_THRESHOLD
+#define MAX_PWM_THRESHOLD 921  // ~90% of 1023 (PWM_MAX)
+#endif
+#ifndef MAX_ON_TIME_MS
+#define MAX_ON_TIME_MS 30000UL  // Max 30 seconds at >90% output before thermal runaway check
+#endif
+#ifndef WATCHDOG_TIMEOUT_MS
+#define WATCHDOG_TIMEOUT_MS 5000UL
+#endif
+#ifndef PID_TIMEOUT_MS
+#define PID_TIMEOUT_MS 10000UL
+#endif
+#ifndef ABSOLUTE_MIN_TEMP_C
+#define ABSOLUTE_MIN_TEMP_C 0.0
+#endif
+#ifndef ABSOLUTE_MAX_TEMP_C
+#define ABSOLUTE_MAX_TEMP_C 350.0
+#endif
+#ifndef SENSOR_VALID_RECOVERY
+#define SENSOR_VALID_RECOVERY 3
+#endif
+#ifndef SENSOR_FAULT_THRESHOLD
+#define SENSOR_FAULT_THRESHOLD 5
+#endif
+#ifndef CHARGER_REMOVED_THRESHOLD_MV
+#define CHARGER_REMOVED_THRESHOLD_MV 500  // 500mV drop indicates charger removed
+#endif
+
+// Allow booting when battery is absent or below cutoff if USB power is available.
+// This makes USB fallback always enabled so low battery readings do not block
+// startup on powered USB connections.
+#ifndef ALLOW_BOOT_WITHOUT_BATTERY
+#define ALLOW_BOOT_WITHOUT_BATTERY 1
+#endif
+
+// Define `VBUS_SENSE_PIN` to a GPIO that's wired to sense USB VBUS (HIGH when
+// USB/5V present). Leave undefined if board has no sense pin.
+// #define VBUS_SENSE_PIN D4
+
+// When waiting for USB VBUS presence to permit boot without battery, give up
+// after this many milliseconds and continue booting with a warning. Set to 0
+// to wait indefinitely (not recommended). Default: 10s.
+#ifndef VBUS_WAIT_MS
+#define VBUS_WAIT_MS 10000UL
+#endif
+
+// External ADS1115 fallback configuration
+// If you have an external ADS1115 library installed (e.g. Adafruit or a
+// different driver by Maximiliano Ramirez), enable fallback to use it when
+// the built-in driver fails to initialize. Adjust the header and type to
+// match the installed library if necessary.
+#ifndef EXTERNAL_ADS1115_FALLBACK
+#define EXTERNAL_ADS1115_FALLBACK 1
+#endif
+
+// Default header/type assume Adafruit ADS1X15 library. If you use another
+// library, override these macros (e.g. in a board-specific config file).
+#ifndef EXTERNAL_ADS1115_HEADER
+#define EXTERNAL_ADS1115_HEADER <Adafruit_ADS1X15.h>
+#endif
+#ifndef EXTERNAL_ADS1115_TYPE
+#define EXTERNAL_ADS1115_TYPE Adafruit_ADS1115
+#endif
 
 // Buttons and timing
 #ifndef BUTTON_ACTIVE_LOW
@@ -200,8 +322,41 @@
 #define BUTTON_LONG_MS 800
 #endif
 
+// ADS1115 Thermocouple Amplifier (I2C-based, 3.3V native)
+#ifndef USE_ADS1115
+#define USE_ADS1115 1         // Enable ADS1115 16-bit I2C thermocouple converter (K-type)
+#endif
+#ifndef ADS1115_I2C_ADDR
+#define ADS1115_I2C_ADDR 0x48 // I2C address (A0 pin tied to GND = 0x48, or change to 0x49/0x4A/0x4B if needed)
+#endif
+#ifndef ADS1115_CHANNEL
+#define ADS1115_CHANNEL 0     // ADC channel 0 for thermocouple input
+#endif
+#ifndef ADS1115_SAMPLES
+#define ADS1115_SAMPLES 16    // Number of samples to average for noise reduction
+#endif
+#ifndef ADS1115_GAIN
+#define ADS1115_GAIN GAIN_ONE // ±4.096V range (appropriate for K-type thermocouple conversion)
+#endif
+
 #ifndef SLEEP_ON_IDLE_MS
 #define SLEEP_ON_IDLE_MS 60000UL
+#endif
+
+// Cooldown period after thermal runaway or safety shutdown
+#ifndef COOLDOWN_REQUIRED_MS
+#define COOLDOWN_REQUIRED_MS 60000UL  // 1 minute cooldown period
+#endif
+
+// Compile-time configuration sanity checks
+#ifdef __cplusplus
+static_assert(BAT_MIN_V < BAT_MAX_V, "BAT_MIN_V must be less than BAT_MAX_V");
+static_assert(BAT_CUTOFF_V >= BAT_MIN_V && BAT_CUTOFF_V <= BAT_MAX_V, "BAT_CUTOFF_V must be within [BAT_MIN_V, BAT_MAX_V]");
+static_assert(PWM_FREQ > 0, "PWM_FREQ must be > 0");
+static_assert(PWM_RES_BITS >= 1 && PWM_RES_BITS <= 16, "PWM_RES_BITS must be between 1 and 16");
+static_assert(ENC_EDGES_PER_DETENT > 0, "ENC_EDGES_PER_DETENT must be > 0");
+static_assert(ENC_STEP_C > 0, "ENC_STEP_C must be > 0");
+static_assert(SLEEP_ON_IDLE_MS >= 0, "SLEEP_ON_IDLE_MS must be non-negative");
 #endif
 
 #endif // ESPATOMIZER_CONFIG_H

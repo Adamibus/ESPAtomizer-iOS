@@ -92,6 +92,9 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
     // MARK: - Published UI state
 
     @Published var status = AtomizerStatus()
+    @Published var deviceName: String = "Unknown"
+    @Published var firmwareVersion: String = "Unknown"
+    @Published var notificationsEnabled: Bool = true
     @Published var isConnected = false
     @Published var shouldAutoReconnect = true
     @Published var powerToggle = false            // bound to UI toggle (kept in sync with status.power)
@@ -144,24 +147,36 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
     private let serviceUUID = CBUUID(string: "b09aa6b5-0f22-4d9c-9dbc-6e3c7d9b2f0a")
 
     // Characteristic UUIDs used by firmware (keep in sync with device)
-    private let uuidEnable   = CBUUID(string: "3f1a0001-2a8d-4a54-8f2f-b7cd2b4b8001")
-    private let uuidSetpoint = CBUUID(string: "3f1a0002-2a8d-4a54-8f2f-b7cd2b4b8001")
-    private let uuidKp       = CBUUID(string: "3f1a0003-2a8d-4a54-8f2f-b7cd2b4b8001")
-    private let uuidKi       = CBUUID(string: "3f1a0004-2a8d-4a54-8f2f-b7cd2b4b8001")
-    private let uuidKd       = CBUUID(string: "3f1a0005-2a8d-4a54-8f2f-b7cd2b4b8001")
-    private let uuidMode     = CBUUID(string: "3f1a0006-2a8d-4a54-8f2f-b7cd2b4b8001")
-    private let uuidTemp     = CBUUID(string: "3f1a0007-2a8d-4a54-8f2f-b7cd2b4b8001")
-    private let uuidOut      = CBUUID(string: "3f1a0008-2a8d-4a54-8f2f-b7cd2b4b8001")
-    private let uuidBat      = CBUUID(string: "3f1a0009-2a8d-4a54-8f2f-b7cd2b4b8001")
-    private let uuidModeRead = CBUUID(string: "3f1a0006-2a8d-4a54-8f2f-b7cd2b4b8002")
-    private let uuidDefaultSp = CBUUID(string: "3f1a000a-2a8d-4a54-8f2f-b7cd2b4b8001")
+    // All characteristics communicate via UTF-8 string encoding
+    // Expected formats: numeric values as decimal strings (e.g., "123.45"), modes as strings (e.g., "AUTO", "MAN", "U1", "U2")
+    private let uuidEnable   = CBUUID(string: "3f1a0001-2a8d-4a54-8f2f-b7cd2b4b8001") // Format: "0" or "1" (power off/on)
+    private let uuidSetpoint = CBUUID(string: "3f1a0002-2a8d-4a54-8f2f-b7cd2b4b8001") // Format: decimal string (e.g., "250.5") in Celsius
+    private let uuidKp       = CBUUID(string: "3f1a0003-2a8d-4a54-8f2f-b7cd2b4b8001") // Format: decimal string (e.g., "10.123")
+    private let uuidKi       = CBUUID(string: "3f1a0004-2a8d-4a54-8f2f-b7cd2b4b8001") // Format: decimal string (e.g., "0.5")
+    private let uuidKd       = CBUUID(string: "3f1a0005-2a8d-4a54-8f2f-b7cd2b4b8001") // Format: decimal string (e.g., "50.0")
+    private let uuidMode     = CBUUID(string: "3f1a0006-2a8d-4a54-8f2f-b7cd2b4b8001") // Format: "AUTO", "MAN", "U1", or "U2"
+    private let uuidTemp     = CBUUID(string: "3f1a0007-2a8d-4a54-8f2f-b7cd2b4b8001") // Format: decimal string in Celsius (notifiable)
+    private let uuidOut      = CBUUID(string: "3f1a0008-2a8d-4a54-8f2f-b7cd2b4b8001") // Format: decimal string (0-pwmMax) (notifiable)
+    private let uuidBat      = CBUUID(string: "3f1a0009-2a8d-4a54-8f2f-b7cd2b4b8001") // Format: integer percent 0-100 or voltage (notifiable)
+    private let uuidModeRead = CBUUID(string: "3f1a0006-2a8d-4a54-8f2f-b7cd2b4b8002") // Format: "0", "1", "2", or "3" (notifiable, read-only)
+    private let uuidDefaultSp = CBUUID(string: "3f1a000a-2a8d-4a54-8f2f-b7cd2b4b8001") // Format: decimal string in Celsius
+    private let uuidTcStatus = CBUUID(string: "3f1a000c-2a8d-4a54-8f2f-b7cd2b4b8001") // Format: "0" (fault) or "1" (ok) (notifiable, read-only)
 
     // Map of discovered characteristics for easier writes/reads
     private var characteristics = [CBUUID: CBCharacteristic]()
+    
+    // Timeout tracking for BLE operations
+    private var pendingWriteTimeouts: [CBUUID: DispatchWorkItem] = [:]
+    private let bleOperationTimeoutSeconds: TimeInterval = 10.0
 
     // CoreBluetooth objects
     private var centralManager: CBCentralManager!
     private var atomizerPeripheral: CBPeripheral?
+    
+    /// Public accessor for current peripheral (read-only)
+    var currentPeripheral: CBPeripheral? {
+        return atomizerPeripheral
+    }
 
     // Keys for state preservation and saved peripheral id
     private let centralRestoreKey = "com.adinj.atomizer.central.restore"
@@ -173,6 +188,10 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
     // Timing helpers
     private var lastScanStart: Date?
     private let minScanInterval: TimeInterval = 2.0     // don't restart scan within this interval
+    
+    // Auto-reconnect retry tracking
+    private var autoReconnectAttempts: Int = 0
+    private let maxAutoReconnectAttempts: Int = 5
 
     // MARK: - Computed
 
@@ -215,6 +234,7 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
             var dualAxisOutput: Bool
             var showTemperatureChart: Bool
             var chartRefreshRateMS: Int
+            var notificationsEnabled: Bool
         }
         let saved = Saved(
             setpoints: setpoints,
@@ -228,7 +248,8 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
             smoothingFallback: smoothingFallback,
             dualAxisOutput: dualAxisOutput,
             showTemperatureChart: showTemperatureChart,
-            chartRefreshRateMS: chartRefreshRateMS
+            chartRefreshRateMS: chartRefreshRateMS,
+            notificationsEnabled: notificationsEnabled
         )
         if let data = try? encoder.encode(saved) {
             UserDefaults.standard.set(data, forKey: configKey)
@@ -252,6 +273,7 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
                 var dualAxisOutput: Bool?
                 var showTemperatureChart: Bool?
                 var chartRefreshRateMS: Int?
+                var notificationsEnabled: Bool?
             }
             if let saved = try? decoder.decode(Saved.self, from: data) {
                 if let sps = saved.setpoints, sps.count == 5 { self.setpoints = sps }
@@ -267,6 +289,7 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
                 if let da = saved.dualAxisOutput { self.dualAxisOutput = da }
                 if let stc = saved.showTemperatureChart { self.showTemperatureChart = stc }
                 if let cr = saved.chartRefreshRateMS { self.chartRefreshRateMS = cr }
+                if let ne = saved.notificationsEnabled { self.notificationsEnabled = ne }
             }
         }
     }
@@ -438,6 +461,7 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
         debugPrint("Connected to \(peripheral.name ?? peripheral.identifier.uuidString)")
         isConnected = true
         shouldAutoReconnect = true
+        autoReconnectAttempts = 0  // Reset on successful connection
         atomizerPeripheral = peripheral
         characteristics.removeAll()
 
@@ -462,13 +486,22 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
         characteristics.removeAll()
         // discoveredPeripherals intentionally preserved as empty state to encourage re-scan
 
-        // Attempt reconnect if enabled, but avoid overlapping scans/connections
-        if shouldAutoReconnect && !isScanning && !isConnected {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+        // Attempt reconnect if enabled, but avoid overlapping scans/connections with retry limit
+        if shouldAutoReconnect && !isScanning && !isConnected && autoReconnectAttempts < maxAutoReconnectAttempts {
+            autoReconnectAttempts += 1
+            // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+            let delaySeconds = TimeInterval(2.0 * pow(2.0, Double(autoReconnectAttempts - 1)))
+            debugPrint("Auto-reconnect attempt \(autoReconnectAttempts)/\(maxAutoReconnectAttempts) in \(delaySeconds)s")
+            DispatchQueue.main.asyncAfter(deadline: .now() + delaySeconds) { [weak self] in
                 guard let self = self else { return }
-                if self.shouldAutoReconnect && !self.isConnected && !self.isScanning {
+                if self.shouldAutoReconnect && !self.isConnected && !self.isScanning && self.autoReconnectAttempts < self.maxAutoReconnectAttempts {
                     self.startScanning()
                 }
+            }
+        } else if !shouldAutoReconnect || autoReconnectAttempts >= maxAutoReconnectAttempts {
+            if autoReconnectAttempts >= maxAutoReconnectAttempts {
+                debugPrint("Max auto-reconnect attempts reached. User must manually reconnect.")
+                autoReconnectAttempts = 0 // Reset for next manual connection
             }
         }
     }
@@ -487,7 +520,7 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
             // discover the set of characteristics we care about
             let characteristicUUIDs = [
                 uuidEnable, uuidSetpoint, uuidKp, uuidKi, uuidKd,
-                uuidMode, uuidTemp, uuidOut, uuidBat, uuidModeRead, uuidDefaultSp
+                uuidMode, uuidTemp, uuidOut, uuidBat, uuidModeRead, uuidDefaultSp, uuidTcStatus
             ]
             peripheral.discoverCharacteristics(characteristicUUIDs, for: service)
         }
@@ -505,7 +538,7 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
             characteristics[characteristic.uuid] = characteristic
 
             // Set notifications for characteristics that the device will push updates for
-            if characteristic.uuid == uuidTemp || characteristic.uuid == uuidBat || characteristic.uuid == uuidModeRead || characteristic.uuid == uuidOut || characteristic.uuid == uuidEnable {
+            if characteristic.uuid == uuidTemp || characteristic.uuid == uuidBat || characteristic.uuid == uuidModeRead || characteristic.uuid == uuidOut || characteristic.uuid == uuidEnable || characteristic.uuid == uuidTcStatus {
                 peripheral.setNotifyValue(true, for: characteristic)
             }
 
@@ -566,6 +599,11 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
 
         case uuidModeRead:
             if let v = Int(s) {
+                // Bounds check: mode should be 0-3 (AUTO, MAN, U1, U2)
+                guard v >= 0 && v <= 3 else {
+                    debugPrint("Mode value out of range: \(v)")
+                    return
+                }
                 pidMode = v
                 status.manual = (v == 1)
                 manualMode = status.manual
@@ -616,6 +654,14 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
                 kd = v
             }
 
+        case uuidTcStatus:
+            // Thermocouple status: "1" = connected/OK, "0" = disconnected/fault
+            if let i = Int(s) {
+                status.tcConn = (i != 0)
+            } else {
+                debugPrint("TC status parse failed for '\(s)'")
+            }
+
         case uuidDefaultSp:
             if let v = Double(s) {
                 defaultSetpoint = v
@@ -640,11 +686,13 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
         }
         lastHistoryAppend = now
 
+        // Trim history BEFORE appending to prevent exceeding limit
+        if history.count >= historyLimit {
+            history.removeFirst()
+        }
+        
         let dp = DataPoint(time: now, temp: status.temp, setpoint: status.setpoint, outputPct: outputPercentage)
         history.append(dp)
-        if history.count > historyLimit {
-            history.removeFirst(history.count - historyLimit)
-        }
     }
 
     /// Update history limit (called from UI). Trim existing history if needed and persist.
@@ -709,10 +757,9 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
         pidTunings[mode] = PID(kp: kp, ki: ki, kd: kd)
         // Persist the PID change for this mode
         saveConfigState()
-        // If this is the currently active mode, apply to device as well
-        if mode == pidMode {
-            setPID(kp: kp, ki: ki, kd: kd)
-        }
+        // Always send to device regardless of current mode
+        // This ensures the device has the updated values persisted in its firmware/EEPROM
+        setPID(kp: kp, ki: ki, kd: kd)
     }
 
     func resetPIDForMode(_ mode: Int) {
@@ -721,16 +768,15 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
         pidTunings[mode] = def
         // Persist reset
         saveConfigState()
-        // If current mode, apply to device
-        if mode == pidMode {
-            setPID(kp: def.kp, ki: def.ki, kd: def.kd)
-        }
+        // Always send to device regardless of current mode to ensure consistency
+        setPID(kp: def.kp, ki: def.ki, kd: def.kd)
     }
 
     func resetAllPIDs() {
         let def = PID(kp: 10.0, ki: 0.5, kd: 50.0)
         for i in 0..<pidTunings.count { pidTunings[i] = def }
         saveConfigState()
+        // Always send to device to ensure it has the reset values
         if isConnected {
             setPID(kp: def.kp, ki: def.ki, kd: def.kd)
         }
@@ -832,12 +878,40 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
         let writeType: CBCharacteristicWriteType = props.contains(.write) ? .withResponse : .withoutResponse
         peripheral.writeValue(data, for: characteristic, type: writeType)
         debugPrint("Wrote to \(uuid): '\(value)'")
+        
+        // Schedule timeout handler for write operations (only for .withResponse writes)
+        if writeType == .withResponse {
+            let timeoutWorkItem = DispatchWorkItem { [weak self] in
+                self?.debugPrint("Write operation timed out for \(uuid)")
+                self?.lastErrorMessage = "Write operation timed out"
+                self?.scheduleClearError()
+                self?.pendingWriteTimeouts.removeValue(forKey: uuid)
+            }
+            // Cancel any existing timeout for this UUID
+            if let existingWorkItem = pendingWriteTimeouts[uuid] {
+                existingWorkItem.cancel()
+            }
+            // Store and schedule new timeout
+            pendingWriteTimeouts[uuid] = timeoutWorkItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + bleOperationTimeoutSeconds, execute: timeoutWorkItem)
+        }
+    }
+    
+    private func debugPrint(_ message: String) {
+        print("[AtomizerViewModel] \(message)")
     }
 
     // CBPeripheralDelegate: write response handler
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+        let uuid = characteristic.uuid
+        
+        // Cancel timeout for this characteristic since we got a response
+        if let workItem = pendingWriteTimeouts.removeValue(forKey: uuid) {
+            workItem.cancel()
+        }
+        
         if let e = error {
-            let msg = "Write failed for \(characteristic.uuid): \(e.localizedDescription)"
+            let msg = "Write failed for \(uuid): \(e.localizedDescription)"
             debugPrint(msg)
             DispatchQueue.main.async { [weak self] in
                 self?.lastErrorMessage = msg
@@ -870,7 +944,7 @@ class AtomizerViewModel: NSObject, ObservableObject, CBCentralManagerDelegate, C
 
     /// Request read of all known characteristics we care about
     func requestAllReads() {
-        let uuidsToRead = [uuidTemp, uuidBat, uuidModeRead, uuidOut, uuidSetpoint, uuidKp, uuidKi, uuidKd, uuidDefaultSp]
+        let uuidsToRead = [uuidTemp, uuidBat, uuidModeRead, uuidOut, uuidSetpoint, uuidKp, uuidKi, uuidKd, uuidDefaultSp, uuidTcStatus]
         for u in uuidsToRead {
             readCharacteristic(u)
         }

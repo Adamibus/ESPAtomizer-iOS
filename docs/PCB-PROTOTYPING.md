@@ -1,6 +1,6 @@
-# Prototyping a PCB for ESPAtomizer (ESP32-C6 + MOSFET + OLED + MCP9600)
+# All-SMD PCB Design for ESPAtomizer (SMD ESP32-C6 + SMD MOSFET + Integrated OLED + Integrated MCP9600)
 
-This checklist helps you build a reliable perfboard/stripboard prototype and transition to a simple PCB.
+**Approach**: Professional manufacturing via **Seeed Studio Fusion PCBA** with 100% surface-mount components and direct PCB IC integration (no breakout modules or socket headers).
 
 ## Electrical blocks to include
 
@@ -47,33 +47,51 @@ This checklist helps you build a reliable perfboard/stripboard prototype and tra
 
 ## Connectors and footprints
 
-- Heater and supply: 2-pin screw terminal (5.08 mm) or XT30/XT60 pigtail for LiPo
-- Thermocouple: mini K-type socket or 2-pin terminal with clear polarity
-- I2C: 4-pin 2.54 mm header (3V3/GND/SDA/SCL) keyed or labeled
-- MOSFET: TO-220 (e.g., IRLB8721/IRLZ44N) or logic-level power DFN/SO-8 (if SMD)
-- Button: 6x6 mm tact or panel-mount
-- OLED: header/socket matching your module; keep SDA/SCL consistent
- - Battery: JST‑PH 2‑pin (J_BAT) labeled BAT+ / BAT−; add SW1 (SPST) on BAT+ for full disconnect
+**⚠️ All footprints and components should be sourced from [Seeed Studio Fusion library](../SEEED-STUDIO-FUSION-INTEGRATION.md) for manufacturing compatibility.**
+
+### Component Specifications
+
+- **Heater and supply**: 2-pin screw terminal (5.08 mm) — LCSC sourced, or XT30/XT60 pigtail for LiPo (Seeed-branded preferred)
+- **Thermocouple**: mini K-type socket or 2-pin terminal with clear polarity — standard components available via LCSC
+- **I2C headers**: 4-pin 2.54 mm female socket header (3V3/GND/SDA/SCL) — keyed or labeled
+  - KiCAD footprint: `Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical` (Seeed verified)
+  - LCSC alternatives: Multiple verified pin socket sources
+- **MOSFET**: TO-220 (e.g., IRLB8721/IRLZ44N) or logic-level power DFN/SO-8 (if SMD) — LCSC sourced
+- **Button**: 6×6 mm tact or panel-mount — standard KiCAD library
+- **OLED module**: SSD1306 I2C breakout with 1×4 female socket header
+  - KiCAD footprint: `Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical`
+  - LCSC sourced modules available
+- **Battery connector**: JST-PH 2-pin (J_BAT) labeled BAT+/BAT−, or upgrade to Seeed XT30 for robust builds
+  - KiCAD footprint: Search LCSC for JST-PH footprint + connector
+  - Add SW1 (SPST) on BAT+ for full disconnect
 
 ### Socket-mount all modules (cost-saving, serviceable)
+
+**⚠️ Use [Seeed Studio Fusion Library](https://github.com/SeeedStudio/KiCad_Lib_LCSC) footprints for best manufacturing compatibility.**
 
 Per your requirement, mount the XIAO ESP32‑C6, the OLED, and the K‑type/MCP9600 board in sockets (female pin headers) so they can be plugged in and replaced:
 
 - XIAO ESP32‑C6: two rows of 1×7 female pin sockets, 2.54 mm pitch
   - Center‑to‑center row spacing: use ~15.5 mm for this ESP32‑C6 board (per measured update). Verify on your exact module before placement.
-  - KiCad footprints: Connector_PinSocket_2.54mm:PinSocket_1x07_P2.54mm_Vertical (x2)
+  - KiCad footprints (Seeed verified): 
+    - From standard library: `Connector_PinSocket_2.54mm:PinSocket_1x07_P2.54mm_Vertical` (x2)
+    - From LCSC/Seeed: Check for verified pin socket part numbers in Seeed library
   - Leave keep‑out under the module for components; don’t place tall parts between the rows.
 
 - OLED (SSD1306 I2C module): one 1×4 female pin socket, 2.54 mm pitch
   - Label pins on the PCB: 3V3, GND, SDA, SCL (left→right). Confirm your module’s header order; many use GND, VCC, SCL, SDA or VCC, GND, SCL, SDA.
-  - KiCad footprint: Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical
+  - KiCad footprint (Seeed verified): 
+    - From standard library: `Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical`
+    - From LCSC/Seeed: Multiple verified sources available
 
 - MCP9600 thermocouple breakout: one 1×7 female pin socket, 2.54 mm pitch
   - Route at minimum: 3V3, GND, SDA, SCL. Optional: ALERT, A0, A1 to allow address/alert features.
   - If you want only 4 pins, you can use a 1×4 socket and strap A0/A1 on the board; using a 1×7 keeps it flexible.
-  - KiCad footprint: Connector_PinSocket_2.54mm:PinSocket_1x07_P2.54mm_Vertical
+  - KiCad footprint (Seeed verified): 
+    - From standard library: `Connector_PinSocket_2.54mm:PinSocket_1x07_P2.54mm_Vertical`
+    - From LCSC/Seeed: Check for verified pin socket part numbers in Seeed library
 
-Recommended socket height: standard “Arduino‑style” 8.5–9 mm tall female sockets work well with common breakouts. Low‑profile sockets are also fine if mechanical clearance allows.
+Recommended socket height: standard "Arduino‑style" 8.5–9 mm tall female sockets work well with common breakouts. Low‑profile sockets are also fine if mechanical clearance allows. All major socket styles available via LCSC.
 
 ## Schematic essentials (net list sketch)
 
@@ -88,13 +106,19 @@ Recommended socket height: standard “Arduino‑style” 8.5–9 mm tall female
 
 ## From perfboard to PCB
 
-- Tools: KiCad (free) or EasyEDA (web)
-- Make a 2-layer PCB with:
-  - Top: signals + I2C, bottom: ground plane and heater return (or vice versa)
-  - Wide copper for heater path; vias stitching if you split across layers
-  - Mounting holes and a clear airflow path if you add a heatsink
-- Silkscreen labels: +V, GND, SDA, SCL, OUT, HEATER ±, TC T+/T−
-- Test points: GATE, DRAIN, SOURCE, 3V3, VBAT, SDA/SCL
+**Recommended workflow**: Use **Seeed Studio Fusion Service** for PCB + component assembly. See [Seeed Studio Fusion Integration Guide](SEEED-STUDIO-FUSION-INTEGRATION.md) for detailed instructions.
+
+- **Design tools**: 
+  - **EasyEDA** (recommended): https://easyeda.com/ — Native Seeed Fusion integration, auto-links LCSC components
+  - **KiCAD** (with Seeed library): https://kicad.org/ + [Seeed KiCAD_Lib_LCSC](https://github.com/SeeedStudio/KiCad_Lib_LCSC)
+- **PCB Manufacturing**:
+  - Make a 2-layer PCB with:
+    - Top: signals + I2C, bottom: ground plane and heater return (or vice versa)
+    - Wide copper for heater path; vias stitching if you split across layers
+    - Mounting holes and a clear airflow path if you add a heatsink
+  - Silkscreen labels: +V, GND, SDA, SCL, OUT, HEATER ±, TC T+/T−
+  - Test points: GATE, DRAIN, SOURCE, 3V3, VBAT, SDA/SCL
+  - **Seeed Design rules**: Verify design against [Seeed Fusion PCB capability specs](https://wiki.seeedstudio.com/Fusion_PCB_Capability/)
 
 ## Bring-up checklist
 

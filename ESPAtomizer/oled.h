@@ -3,15 +3,18 @@
 #define OLED_H
 
 #include "config.h"
+#include "StateManager.h"
 #include <Arduino.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
+extern GlobalState gState;
+
 // Use internal linkage to avoid duplicate symbol issues when included
 // from the single main sketch translation unit.
-static Adafruit_SSD1306 display(OLED_WIDTH, OLED_HEIGHT, &Wire, -1);
-static bool displayAvailable = false;
+// Single definition provided in the main translation unit; header exposes externs.
+extern Adafruit_SSD1306 display;
 
 static bool tryInitOLED(int sdaPin, int sclPin) {
   Serial.printf("[OLED] Basic I2C check using SDA=%d SCL=%d\n", sdaPin, sclPin);
@@ -48,14 +51,14 @@ static bool tryInitOLED(int sdaPin, int sclPin) {
         display.setCursor(0, 0);
         display.print(F("OK"));
         display.display();
-        displayAvailable = true;
+        gState.display.available = true;
         return true;
       }
     }
   }
 
   Serial.println(F("[OLED] No I2C ACK found on common addresses"));
-  displayAvailable = false;
+  gState.display.available = false;
   return false;
 }
 

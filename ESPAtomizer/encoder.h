@@ -3,11 +3,10 @@
 #define ENCODER_H
 
 #include "config.h"
+#include "StateManager.h"
 #include <Arduino.h>
 
-// Optional external buffer filled by `encoderInit()` so callers (e.g. the
-// boot OLED code) can display a concise encoder initialization summary.
-extern char lastEncoderInfo[64];
+extern GlobalState gState;
 
 // Encoder configuration defaults (moveable overrides should be placed in
 // `encoder.h` rather than the main sketch to keep encoder tuning centralized.)
@@ -41,7 +40,7 @@ extern char lastEncoderInfo[64];
 // Encoder direction and sensitivity tweaks
 // Set ENC_DIR to 1 for normal, -1 to invert rotation
 #ifndef ENC_DIR
-#define ENC_DIR -1
+#define ENC_DIR 1
 #endif
 // Scale applied to the step size per detent to increase resolution (0 < scale <= 1)
 #ifndef ENC_STEP_SCALE
@@ -125,7 +124,7 @@ static inline void encoderInit() {
   else attachInterrupt(ENC_PIN_B, onEncChange, CHANGE);
   Serial.println(F("[ENC] attachInterrupt() called for A and B (CHANGE)."));
   // Publish a short initialization summary for display on the boot screen
-  snprintf(lastEncoderInfo, 64, "A=%d B=%d ia=%d ib=%d inv=%d edges=%d db=%dus", ENC_PIN_A, ENC_PIN_B, ia, ib, encSoftInvert?1:0, ENC_EDGES_PER_DETENT, ENC_ISR_DEBOUNCE_US);
+  snprintf(gState.input.lastEncoderInfo, 64, "A=%d B=%d ia=%d ib=%d inv=%d edges=%d db=%dus", ENC_PIN_A, ENC_PIN_B, ia, ib, encSoftInvert?1:0, ENC_EDGES_PER_DETENT, ENC_ISR_DEBOUNCE_US);
 }
 
 static inline void encoderSelfTest(unsigned long durationMs = 5000UL) {

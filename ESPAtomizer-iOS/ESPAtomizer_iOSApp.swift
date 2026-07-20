@@ -13,3 +13,9 @@ struct ESPAtomizer_iOSApp: App {
         }
     }
 }
+
+// MARK: - Preview
+
+#Preview {
+    ESPAtomizer_iOSApp()
+}

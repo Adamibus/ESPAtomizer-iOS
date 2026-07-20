@@ -37,21 +37,30 @@ struct ContentView: View {
     @State private var kiString = ""
     @State private var kdString = ""
     
-    // Additional script text for U1/U2
-    
-    
     // UI state
     @State private var selectedMode = 0
     @State private var showForgetConfirmation = false
     @State private var showingError = false
     @State private var errorText: String = ""
     
+    // Validation ranges
+    private let pidMin = 0.0
+    private let pidMax = 1000.0
+    private let setpointMinC = 30.0
+    private let setpointMaxC = 315.0
+    
+    private func validatePID(_ value: String) -> Bool {
+        guard let d = Double(value) else { return false }
+        return d >= pidMin && d <= pidMax
+    }
+    
+    private func validateSetpoint(_ value: Double) -> Bool {
+        return value >= setpointMinC && value <= setpointMaxC
+    }
+    
     // Re-declare any CBUUIDs we need to write from the UI (ViewModel keeps them private).
     // These must match the UUIDs used in your AtomizerViewModel.
     private let uuidMode = CBUUID(string: "3f1a0006-2a8d-4a54-8f2f-b7cd2b4b8001")
-    private let uuidSaveScript = CBUUID(string: "3f1a00ff-0000-0000-0000-000000000001") // example custom - adjust if different
-    // NOTE: If your firmware expects script uploading under a specific characteristic,
-    // replace `uuidSaveScript` with the correct UUID. If you don't have one, script save will be local only.
     
     // Prefer flexible layouts; avoid hard-coded large fixed heights so smaller devices can scroll.
     // The inner mode views are already ScrollViews so the main column should be scrollable.
@@ -70,15 +79,8 @@ struct ContentView: View {
                         HStack {
                             Text("Controls")
                                 .font(.headline)
-                    // show setpoint with unit conversion if needed
-                    if viewModel.tempUnit == "C" {
-                        Text(String(format: "%.1f°C", viewModel.status.setpoint))
-                            .font(.title2)
-                    } else {
-                        let f = viewModel.status.setpoint * 9.0/5.0 + 32.0
-                        Text(String(format: "%.1f°F", f))
-                            .font(.title2)
-                    }
+                            Spacer()
+                            // Show output in manual mode, setpoint in auto mode
                             if viewModel.pidMode == 1 {
                                 Text(String(format: "%.0f%%", viewModel.manualOutputPercentage))
                                     .font(.title2)
@@ -102,6 +104,7 @@ struct ContentView: View {
                             .onChange(of: viewModel.powerToggle) { _ in
                                 viewModel.togglePower()
                             }
+                            .disabled(!viewModel.isConnected)
                             .padding(.vertical, 6)
                         
                         // Mode navigation (button-bar) + content switcher
@@ -233,6 +236,11 @@ struct ContentView: View {
             .alert("Error", isPresented: $showingError, actions: {
                 Button("OK", role: .cancel) { showingError = false }
             }, message: { Text(errorText) })
+            .alert("Low Battery", isPresented: .constant((viewModel.status.batPct ?? 100) < 20 && viewModel.notificationsEnabled && viewModel.isConnected), actions: {
+                Button("OK", role: .cancel) { }
+            }, message: { 
+                Text("Battery level is \(viewModel.status.batPct ?? 0)%. Consider charging the device soon.")
+            })
         } // NavigationView
     } // body
 
@@ -259,23 +267,6 @@ struct ContentView: View {
         case 3: return "U2"
         case 4: return "Config"
         default: return "Unknown"
-        }
-    }
-    
-    // Attempt to save a script to a profile on-device. If your firmware does not support scripts,
-    // this simply prints to console and could be extended to call a proper characteristic.
-    private func saveScriptToProfile(profileName: String, script: String) {
-        // Construct a simple "SAVE:U1:<script>" payload or similar. Adapt to firmware.
-        let payload = "SAVE:\(profileName):\(script)"
-        // Use the public writeCharacteristic on the view model.
-        // We need a characteristic UUID to write to — use an assumed one here (uuidSaveScript).
-        if let data = payload.data(using: .utf8) {
-            // We'll call the view model's writeCharacteristic(public) method.
-            // Since writeCharacteristic expects a CBUUID, use uuidSaveScript declared above.
-            viewModel.writeCharacteristic(uuidSaveScript, value: payload)
-            print("Wrote script to profile \(profileName) with payload: \(payload)")
-        } else {
-            print("Failed to encode script payload.")
         }
     }
 }
@@ -334,6 +325,21 @@ fileprivate struct StatusPanelView: View {
                         Text("\(pct)%")
                             .font(.title3)
                             .foregroundColor(pct < 20 ? .red : .green)
+                    } else {
+                        Text("--")
+                            .font(.title3)
+                    }
+                }
+                
+                Spacer()
+                
+                VStack {
+                    Text("TC")
+                        .font(.caption)
+                    if let connected = viewModel.status.tcConn {
+                        Text(connected ? "OK" : "Error")
+                            .font(.title3)
+                            .foregroundColor(connected ? .green : .red)
                     } else {
                         Text("--")
                             .font(.title3)
@@ -420,6 +426,16 @@ fileprivate struct AutoModeView: View {
     @Binding var kiString: String
     @Binding var kdString: String
     
+    @State private var sliderIsDragging = false
+    
+    private let pidMin = 0.0
+    private let pidMax = 1000.0
+    
+    private func validatePID(_ value: String) -> Bool {
+        guard let d = Double(value) else { return false }
+        return d >= pidMin && d <= pidMax
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text("Auto Mode")
@@ -441,12 +457,36 @@ fileprivate struct AutoModeView: View {
                     Slider(value: Binding(
                         get: { displayValue(viewModel.setpoint) },
                         set: { newVal in
+                            // Only send to device on drag end, not during dragging
                             let c = toCelsius(newVal)
-                            // Update UI copy and persist to Auto slot
                             viewModel.setpoint = c
-                            viewModel.setSetpointForMode(0, c)
+                            if !sliderIsDragging {
+                                viewModel.setSetpointForMode(0, c)
+                            }
                         }
                     ), in: displayRange(), step: displayStep())
+                    .disabled(!viewModel.isConnected)
+                    .onReceive(
+                        NotificationCenter.default.publisher(for: UISlider.touchDownNotification),
+                        perform: { _ in sliderIsDragging = true }
+                    )
+                    .onReceive(
+                        NotificationCenter.default.publisher(for: UISlider.touchUpInsideNotification),
+                        perform: { _ in
+                            sliderIsDragging = false
+                            let c = toCelsius(displayValue(viewModel.setpoint))
+                            viewModel.setSetpointForMode(0, c)
+                        }
+                    )
+                    .onReceive(
+                        NotificationCenter.default.publisher(for: UISlider.touchUpOutsideNotification),
+                        perform: { _ in
+                            sliderIsDragging = false
+                            let c = toCelsius(displayValue(viewModel.setpoint))
+                            viewModel.setSetpointForMode(0, c)
+                        }
+                    )
+                }
                 }
                 
                 // PID Tunings
@@ -462,10 +502,10 @@ fileprivate struct AutoModeView: View {
                             .frame(width: 120)
                             .multilineTextAlignment(.trailing)
                             .onChange(of: kpString) { val in
-                                if let d = Double(val) {
+                                if let d = Double(val), validatePID(val) {
                                     viewModel.kp = d
+                                }
                             }
-                        }
                         Spacer()
                     }
                     
@@ -477,10 +517,10 @@ fileprivate struct AutoModeView: View {
                             .frame(width: 120)
                             .multilineTextAlignment(.trailing)
                             .onChange(of: kiString) { val in
-                                if let d = Double(val) {
+                                if let d = Double(val), validatePID(val) {
                                     viewModel.ki = d
+                                }
                             }
-                        }
                         Spacer()
                     }
                     
@@ -492,10 +532,10 @@ fileprivate struct AutoModeView: View {
                             .frame(width: 120)
                             .multilineTextAlignment(.trailing)
                             .onChange(of: kdString) { val in
-                                if let d = Double(val) {
+                                if let d = Double(val), validatePID(val) {
                                     viewModel.kd = d
+                                }
                             }
-                        }
                         Spacer()
                     }
                     
@@ -507,8 +547,7 @@ fileprivate struct AutoModeView: View {
                         .buttonStyle(.borderedProminent)
 
                         Button("Load from Device") {
-                            // Try to read the current PID values by reading the characteristics (ViewModel will read on connect)
-                            // If you need direct read triggers, add methods in viewModel to read specific characteristics.
+                            viewModel.requestAllReads()
                         }
                         .buttonStyle(.bordered)
 
@@ -547,7 +586,9 @@ fileprivate struct ManualModeView: View {
                 TemperatureChartView(viewModel: viewModel)
                 
                 VStack(alignment: .leading) {
-                    Text("Manual Output: \(String(format: "%.0f%%", (viewModel.manualOutput / Double(max(1, viewModel.status.pwmMax))) * 100.0))")
+                    let maxOutput = max(1, viewModel.status.pwmMax) // Guard against pwmMax == 0
+                    let outputPct = (viewModel.manualOutput / Double(maxOutput)) * 100.0
+                    Text("Manual Output: \(String(format: "%.0f%%", outputPct))")
                     Slider(
                         value: Binding(
                             get: { viewModel.manualOutput },
@@ -555,12 +596,12 @@ fileprivate struct ManualModeView: View {
                                 viewModel.setManualOutput(newVal)
                             }
                         ),
-                        in: 0...Double(viewModel.status.pwmMax),
+                        in: 0...Double(maxOutput),
                         step: 1
                     ) {
                         Text("Manual Output")
                     }
-                    .disabled(viewModel.pidMode == 1) // disable if in PID mode
+                    .disabled(!viewModel.isConnected || viewModel.pidMode != 1) // disable if disconnected or not in manual mode
                 }
                 
                 Text("Note: Manual mode sends a fixed output value to the heater. Use with caution.")
@@ -660,7 +701,6 @@ fileprivate struct PresetView: View {
                         Spacer()
                     }
                     
-                    // Save/Reset actions
                     HStack(spacing: 12) {
                         Button("Update PID") {
                             // Update PID for Auto mode (0) and persist
@@ -669,8 +709,7 @@ fileprivate struct PresetView: View {
                         .buttonStyle(.borderedProminent)
 
                         Button("Load from Device") {
-                            // Try to read the current PID values by reading the characteristics (ViewModel will read on connect)
-                            // If you need direct read triggers, add methods in viewModel to read specific characteristics.
+                            viewModel.requestAllReads()
                         }
                         .buttonStyle(.bordered)
 
@@ -902,8 +941,8 @@ fileprivate struct ConfigView: View {
                             HStack {
                                 Text(item.peripheral.name ?? "Unknown")
                                 Spacer()
-                                Button(viewModel.isConnected && viewModel.atomizerPeripheral?.identifier == item.peripheral.identifier ? "Disconnect" : "Connect") {
-                                    if viewModel.isConnected && viewModel.atomizerPeripheral?.identifier == item.peripheral.identifier {
+                                Button(viewModel.isConnected && viewModel.currentPeripheral?.identifier == item.peripheral.identifier ? "Disconnect" : "Connect") {
+                                    if viewModel.isConnected && viewModel.currentPeripheral?.identifier == item.peripheral.identifier {
                                         viewModel.disconnect()
                                     } else {
                                         viewModel.connect(to: item.peripheral)
@@ -1090,4 +1129,35 @@ fileprivate struct ConnectionView: View {
             Text("This will disconnect and disable auto-reconnection. Are you sure?")
         }
     }
+}
+
+// MARK: - Preview Support
+
+#Preview("Content View - Connected") {
+    ContentView(viewModel: {
+        let vm = AtomizerViewModel(startCentral: false)
+        vm.isConnected = true
+        vm.status = AtomizerStatus(
+            temp: 245.5,
+            setpoint: 250.0,
+            kp: 10.0,
+            ki: 0.5,
+            kd: 50.0,
+            manual: false,
+            power: true,
+            out: 800.0,
+            pwmMax: 1023,
+            spmode: false,
+            batV: 4.2,
+            batPct: 85,
+            tcConn: true
+        )
+        vm.deviceName = "ESPAtomizer-001"
+        vm.firmwareVersion = "2.1.0"
+        return vm
+    }())
+}
+
+#Preview("Content View - Disconnected") {
+    ContentView(viewModel: AtomizerViewModel(startCentral: false))
 }

@@ -3,7 +3,10 @@
 #define BATTERY_H
 
 #include "config.h"
+#include "StateManager.h"
 #include <Arduino.h>
+
+extern GlobalState gState;
 
 #if USE_BAT
 #include <string>
@@ -11,9 +14,7 @@
 // Header-only battery helpers (consolidated implementation)
 // Note: functions/variables use internal linkage to avoid ODR issues
 // when this header is included from multiple translation units.
-static double batteryVoltage = NAN;
-static int batteryPercent = -1;
-static bool batteryLow = false;
+// Single definitions are provided in the main translation unit; header exposes externs.
 
 static inline void initBattery() {
 	pinMode(BAT_PIN, INPUT);
@@ -24,31 +25,62 @@ static inline void initBattery() {
 		analogSetPinAttenuation(BAT_PIN, ADC_ATTENDB_MAX);
 	#endif
 #endif
+	// Diagnostic: show battery ADC pin configuration
+	Serial.printf("[BATT] ADC pin=%d (A0=%d), R1=%.0f, R2=%.0f, ratio=%.2f\n", 
+	              BAT_PIN, (int)A0, BAT_R1, BAT_R2, (BAT_R1 + BAT_R2) / BAT_R2);
+	
+	// Take 10 quick readings to check for floating pin
+	Serial.println(F("[BATT] ADC stability check (10 samples):"));
+	uint32_t samples[10];
+	uint32_t minVal = 4095, maxVal = 0;
+	for (int i = 0; i < 10; i++) {
+		samples[i] = analogRead(BAT_PIN);
+		if (samples[i] < minVal) minVal = samples[i];
+		if (samples[i] > maxVal) maxVal = samples[i];
+		delay(5);
+	}
+	uint32_t spread = maxVal - minVal;
+	Serial.printf("[BATT] min=%lu max=%lu spread=%lu\n", (unsigned long)minVal, (unsigned long)maxVal, (unsigned long)spread);
+	if (spread > 500) {
+		Serial.println(F("[BATT] WARNING: ADC readings unstable - pin may be floating (not connected)!"));
+	} else if (maxVal < 100) {
+		Serial.println(F("[BATT] WARNING: ADC reads near zero - check if BAT_ADC net is connected"));
+	} else {
+		Serial.println(F("[BATT] ADC appears stable"));
+	}
 }
 
 static inline void sampleBattery() {
+	#if TEST_MODE
+	  // Provide a stable simulated battery reading for logic tests
+	  gState.battery.voltage = 3.90;
+	  gState.battery.percent = 75;
+	  gState.battery.lowCutoff = false;
+	  Serial.printf("[BATT] (TEST_MODE) v=%.3fV pct=%d low=%d\n", gState.battery.voltage, gState.battery.percent, gState.battery.lowCutoff?1:0);
+	  return;
+	#endif
 	uint32_t acc = 0;
 	for (int i = 0; i < BAT_SAMPLES; ++i) { acc += analogRead(BAT_PIN); delay(1); }
 	uint32_t batteryRaw = acc / (BAT_SAMPLES > 0 ? BAT_SAMPLES : 1);
 	double v_adc = (batteryRaw / 4095.0) * 3.3;
 	double ratio = (BAT_R1 + BAT_R2) / BAT_R2;
-	batteryVoltage = v_adc * ratio;
-	double p = (batteryVoltage - BAT_MIN_V) / (BAT_MAX_V - BAT_MIN_V) * 100.0;
+	gState.battery.voltage = v_adc * ratio;
+	double p = (gState.battery.voltage - BAT_MIN_V) / (BAT_MAX_V - BAT_MIN_V) * 100.0;
 	if (p < 0) p = 0; if (p > 100) p = 100;
-	batteryPercent = (int)(p + 0.5);
-	batteryLow = (batteryVoltage > 0 && batteryVoltage < BAT_CUTOFF_V);
+	gState.battery.percent = (int)(p + 0.5);
+	gState.battery.lowCutoff = (gState.battery.voltage > 0 && gState.battery.voltage < BAT_CUTOFF_V);
 
-#if USE_BLE
-	if ( ::chBat && ::bleServer && ::bleServer->getConnectedCount() > 0) {
-		char bbuf[32]; snprintf(bbuf, sizeof(bbuf), "%.2f", batteryVoltage);
+#if USE_BLE && !TEST_MODE
+	if (gState.ble.chBat && gState.ble.server && gState.ble.server->getConnectedCount() > 0) {
+		char bbuf[32]; snprintf(bbuf, sizeof(bbuf), "%.2f", gState.battery.voltage);
 		std::string bv(bbuf);
-		::chBat->setValue(bv);
-		::chBat->notify();
+		gState.ble.chBat->setValue(bv);
+		gState.ble.chBat->notify();
 	}
 #endif
 
 	// Print battery debugging info to serial for bring-up visibility
-	Serial.printf("[BATT] v=%.3fV pct=%d low=%d\n", batteryVoltage, batteryPercent, batteryLow?1:0);
+	Serial.printf("[BATT] v=%.3fV pct=%d low=%d\n", gState.battery.voltage, gState.battery.percent, gState.battery.lowCutoff?1:0);
 }
 
 static inline void printBatteryDebug() {

@@ -1,11 +1,16 @@
-# Battery pack procurement (Option 1)
+# Battery Pack Procurement for All-SMD ESPAtomizer
 
-This document lists vetted candidate parts for a safe single-cell 18650 option (Option 1) for bench testing the ESPAtomizer heater. It contains links found and a short vendor/safety checklist.
+**See also**: 
+- [Seeed Studio Fusion Integration Guide](SEEED-STUDIO-FUSION-INTEGRATION.md) — Comprehensive SMD component sourcing
+- [SMD PCB Design Guide](SMD-PCB-DESIGN.md) — All-SMD PCB layout and BOM
+- [SEEED-STUDIO-FUSION-INTEGRATION.md](SEEED-STUDIO-FUSION-INTEGRATION.md) — Connector details (SMD JST-GH)
+
+This document lists vetted candidate parts for a safe single-cell 18650 LiPo option for powering the all-SMD ESPAtomizer design. Focus: minimal external connectors, optimized for Seeed Fusion manufacturing.
 
 ## Summary recommendation
 - Cell options (choose 1): Samsung INR18650-25R (20A, 2500mAh) or Molicel P26A (35A, 2600mAh). Prefer Molicel P26A if you expect heavy pulses and sustained high currents. Buy from a reputable vendor (Illumn, IMR Batteries, BatteryJunction, or authorized distributers).
-- Connectors / pigtails: use XT30 (16–18 AWG) for compact builds, XT60 for higher margin. Prefer 16 AWG silicone wire attached to XT30/XT60 pigtails.
-- Protection: add a 1S PCM rated >= continuous current and able to handle pulses (20–30A rating), and an inline blade fuse (ATC/ATO) sized for continuous current with pulse headroom (recommend 15 A baseline; use 20 A if you expect larger pulses).
+- **Connectors / pigtails**: Use **Seeed-branded XT30** (preferred) or XT60 for high-current builds. Source from **LCSC** (https://lcsc.com/) or **Seeed Studio** direct for best pricing and verified quality. Alternative: 16 AWG silicone wire attached to quality XT pigtails.
+- **Protection**: Add a 1S PCM (via **LCSC**) rated >= continuous current and able to handle pulses (20–30A rating), and an inline blade fuse (sourced from **LCSC** or Amazon) sized for continuous current with pulse headroom (recommend 15 A baseline; use 20 A if you expect larger pulses).
 
 ## Vetted candidate product links
 
@@ -88,6 +93,20 @@ Deliverables for this step
 If you want, I will create the `docs/battery-test-log.md` template now and set the TODO `Assemble & bench-test battery pack` to completed once you confirm tests are done and provide the log. Otherwise I will wait for you to run the tests and report results.
 
 ### Pigtails / pre-wired leads
+
+**Preferred**: Source high-quality XT connectors directly from **LCSC** (https://lcsc.com/) or **Seeed Studio** (https://www.seeedstudio.com/). Seeed-branded XT30/XT60 connectors offer superior reliability and are optimized for high-current applications.
+
+#### Example sourcing options:
+- **Seeed Studio direct**: XT30/XT60 connectors with 16–18 AWG silicone pigtails
+  - Link: https://www.seeedstudio.com/parts (search "XT30" or "XT60")
+  - Quality: Verified manufacturing partner; preferred for production builds
+  
+- **LCSC Electronics** (Seeed's primary distributor): Multiple XT connector and pigtail options
+  - Link: https://lcsc.com/ (search "XT30 pigtail" or "XT60 pigtail")
+  - Pricing: Often competitive; integrates with Seeed Fusion PCB service
+  - Specs: Verify wire gauge (16 AWG recommended) and connector rating
+
+#### Legacy options (alternative):
 - Amass XT30U-M 18AWG 10cm LiPo Pigtail (3-pack) — Amazon ASIN `B09BDHT7LZ`
   - Link: https://www.amazon.com/Amass-XT30U-M-18AWG-10cm-Pigtail/dp/B09BDHT7LZ
   - Notes: 18 AWG; for higher margin use 16 AWG.
@@ -96,10 +115,24 @@ If you want, I will create the `docs/battery-test-log.md` template now and set t
   - Notes: 16 AWG silicone wire, includes input capacitor (helpful for transient suppression with long leads).
 
 ### Inline fuse / protection examples
-- 16 AWG Inline ATC/ATO blade fuse holder (10-pack) — Amazon ASIN `B08K3NFZCP`
+
+**Recommended approach**: Source protection components from **LCSC** (https://lcsc.com/) for best pricing and integration with Seeed Fusion service.
+
+#### Fuse holders:
+- **LCSC**: Search "16 AWG inline ATC fuse holder" or "20 AWG inline fuse holder" for multiple verified options
+  - Link: https://lcsc.com/ (search in site)
+  - Many verified manufacturers with consistent quality and fast fulfillment
+  
+- **Legacy option** (Amazon): 16 AWG Inline ATC/ATO blade fuse holder (10-pack) — Amazon ASIN `B08K3NFZCP`
   - Link: https://www.amazon.com/16-AWG-Inline-Fuse-Holder/dp/B08K3NFZCP
   - Notes: check included fuse amperage. Use 15 A or 20 A blade fuses depending on required headroom.
-- Example 1S PCM protection module (generic listing) — Amazon example:
+
+#### Protection modules (1S PCM):
+- **LCSC**: Search "1S PCM protection module" for many options with specs
+  - Link: https://lcsc.com/
+  - Verify continuous/pulse ratings and seller reputation via LCSC reviews
+
+- **Legacy option** (Amazon): Example 1S PCM protection module — Amazon example:
   - Link: https://www.amazon.com/Li-ion-Lithium-Battery-Protection-Circuit/dp/B07W6L7F3X
   - Notes: many generic 1S PCMs exist; verify continuous/pulse ratings and seller reputation.
 
@@ -111,13 +144,14 @@ If you want, I will create the `docs/battery-test-log.md` template now and set t
 
 ## Suggested baseline configuration (for your heater ~6–8 A continuous, higher preheat pulses)
 - Cell: Molicel P26A (preferred) or Samsung 25R (acceptable).
-- Connector/pigtail: XT30 with 16 AWG silicone pigtail (Lumenier 16 AWG pigtail recommended).
-- PCM: 1S PCM rated >= 20 A (verify pulse rating). If using a PCM with limited pulse headroom, add an inline fuse sized to protect against sustained overloads.
-- Inline fuse: 15 A slow/standard blade fuse (or 20 A if you accept less protective margin for high pulses). Use fuse + PCM together for safety and convenience.
+- **Connector/pigtail**: **Seeed-branded XT30** with 16 AWG silicone pigtail — source from **LCSC** or **Seeed Studio direct**
+- **PCM**: 1S PCM rated >= 20 A (verify pulse rating) — source from **LCSC**. If using a PCM with limited pulse headroom, add an inline fuse sized to protect against sustained overloads.
+- **Inline fuse**: 15 A slow/standard blade fuse (or 20 A if you accept less protective margin for high pulses) — source from **LCSC**. Use fuse + PCM together for safety and convenience.
 
 ## Next steps / acceptance criteria
-1. Confirm whether you prefer `XT30` or `XT60` as final connector choice. I recommend `XT30` + 16 AWG for a compact and reliable solution for ~8 A continuous.
-2. If you want, I will convert these candidates into a small procurement table with vendor SKUs, prices, and buy-links, and update `docs/to do` with order/check steps.
+1. Confirm whether you prefer `XT30` or `XT60` as final connector choice. **I recommend Seeed-branded `XT30` + 16 AWG**, sourced from **LCSC** or **Seeed Studio**, for a compact, reliable, and production-ready solution for ~8 A continuous.
+2. Review the [Seeed Studio Fusion Integration Guide](SEEED-STUDIO-FUSION-INTEGRATION.md) for complete hardware sourcing strategy and PCB design workflow.
+3. If you want, I will convert these candidates into a small procurement table with vendor SKUs, prices, and buy-links (prioritizing LCSC), and update `docs/to do` with order/check steps.
 
 ---
 _Created by automated procurement assist on behalf of ESPAtomizer project. Verify seller availability & datasheets before ordering._

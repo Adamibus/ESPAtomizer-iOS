@@ -1,4 +1,4 @@
-26762028855637798
+26774366686113770
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -106364,3 +106364,38 @@ Varistor VF
 0
 2
 2
+XIAO
+PinSocket_1x07_P2.54mm_Vertical_Left
+Single row 1x07 2.54mm female header socket - LEFT row for XIAO, origin at pad1 center
+socket 1x07 2.54mm female
+0
+7
+7
+XIAO
+PinSocket_1x07_P2.54mm_Vertical_Right
+Single row 1x07 2.54mm female header socket - RIGHT row for XIAO, origin at pad1 center
+socket 1x07 2.54mm female
+0
+7
+7
+XIAO
+Untitled
+
+
+0
+38
+38
+XIAO
+XIAO-ESP32-C6-SMD
+
+
+0
+24
+24
+XIAO
+XIAO_Socket_2x7_17.78mm
+Minimal dual-row 2x7 socket for Seeed XIAO modules – 17.78mm row spacing, 2.54mm pitch
+XIAO socket 2x7 2.54mm 17.78mm
+0
+14
+14
