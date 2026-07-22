@@ -1,5 +1,0 @@
-(sym_lib_table
-  (version 7)
-  (lib (name "rotrayencoder")(type "KiCad")(uri "${KIPRJMOD}/lib/symbols/Device.kicad_sym")(options "")(descr ""))
-  (lib (name "XIAO")(type "KiCad")(uri "${KIPRJMOD}/lib/symbols/XIAO.kicad_sym")(options "")(descr "XIAO ESP32C6 composite module symbol"))
-)

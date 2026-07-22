@@ -1,7 +1,0 @@
-Designator,Description,Footprint,Qty,Notes
-J2,Pin socket 1x4 2.54mm vertical,STDLIB:PinSocket_1x04_P2.54mm_Vertical,1,Header for MAX6675 / accessory (1x4)
-J3,JST-PH 2-pin vertical (battery),STDLIB:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical,1,Battery input (PH2.0)
-J4,Pin header 1x05 2.54mm vertical,STDLIB:PinHeader_1x05_P2.54mm_Vertical,1,GPIO / OLED header (1x5)
-J5,JST-PH 2-pin vertical (heater / external load),STDLIB:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical,1,Heater / external load connector (PH2.0)
-SW2,Slide switch SPST (battery),STDLIB:SW_SPST_Slide,1,Inline on BAT+ for full battery disconnect (reference SW2)
-SW3,Rotary encoder with switch,ENCODER:RotaryEncoder_Alps_EC11E-Switch_Vertical_H20mm,1,User encoder with integrated push switch (SW3)
