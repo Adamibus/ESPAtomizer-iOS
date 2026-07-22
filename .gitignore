@@ -4,4 +4,8 @@
 .vscode/launch.json
 .vscode/ipch
 .venv/
-ESPAtomizer-iOS/
+ESPAtomizer-iOS/build/
+ESPAtomizer-iOS/DerivedData/
+.DS_Store
+.claude/
+*.bak

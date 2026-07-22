@@ -1,0 +1,22 @@
+# Normalize line endings: store text as LF in the repo and check out as LF,
+# regardless of any local core.autocrlf setting. Stops the LF/CRLF warnings.
+* text=auto eol=lf
+
+# Source / text formats (explicit LF)
+*.swift    text eol=lf
+*.plist    text eol=lf
+*.pbxproj  text eol=lf merge=union
+*.json     text eol=lf
+*.md       text eol=lf
+*.txt      text eol=lf
+*.ino      text eol=lf
+*.xcscheme text eol=lf
+*.xcsettings text eol=lf
+*.xcworkspacedata text eol=lf
+
+# Binary assets (never touch)
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.pdf  binary
+*.xcuserstate binary
