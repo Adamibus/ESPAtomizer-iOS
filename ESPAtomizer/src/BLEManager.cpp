@@ -31,6 +31,21 @@ static bool isValidNumericString(const char* str) {
   return seenDigit;
 }
 
+// Reports the outcome of a processed write back to the app over UUID_STATUS, so a rejected
+// value is visible in the UI instead of only appearing in the serial log. `field` is a short
+// code (e.g. "SP", "KP", "MODE"); `reason` is a short code too (e.g. "range", "fmt").
+static void bleReportStatus(GlobalState* pGState, const char* field, bool ok, const char* reason = nullptr) {
+  if (!pGState || !pGState->ble.chStatus) return;
+  char buf[32];
+  if (ok) {
+    snprintf(buf, sizeof(buf), "OK:%s", field);
+  } else {
+    snprintf(buf, sizeof(buf), "ERR:%s:%s", field, reason ? reason : "invalid");
+  }
+  pGState->ble.chStatus->setValue(std::string(buf));
+  pGState->ble.chStatus->notify();
+}
+
 // BLE callback class (moved from .ino)
 class BLEManagerCallbacks : public NimBLECharacteristicCallbacks {
 private:
@@ -62,9 +77,12 @@ public:
           pGState->pidController.pidOutput = 0;
         }
         Serial.printf("[BLE] System enabled: %d\n", pGState->pidController.systemEnabled ? 1 : 0);
+        bleReportStatus(pGState, "EN", true);
+      } else {
+        bleReportStatus(pGState, "EN", false, "empty");
       }
     }
-    
+
     // ===== SETPOINT =====
     else if (uuid == UUID_SETPOINT) {
       double newSp = toF(val);
@@ -72,11 +90,13 @@ public:
         pGState->pidController.setpointC = constrain(newSp, (double)ENC_MIN_C, (double)ENC_MAX_C);
         PreferencesManager::setSetpoint(pGState->pidController.setpointC, pGState->pidController.pidMode);
         Serial.printf("[BLE] Setpoint set to %.1fC\n", pGState->pidController.setpointC);
+        bleReportStatus(pGState, "SP", true);
       } else {
         Serial.printf("[BLE] WARNING: Rejected invalid setpoint %.1f\n", newSp);
+        bleReportStatus(pGState, "SP", false, isnan(newSp) ? "fmt" : "range");
       }
     }
-    
+
     // ===== KP =====
     else if (uuid == UUID_KP) {
       double newKp = toF(val);
@@ -84,11 +104,13 @@ public:
         pGState->pidController.Kp = constrain(newKp, 0.1, 100.0);
         PreferencesManager::setKp(pGState->pidController.Kp, pGState->pidController.pidMode);
         Serial.printf("[BLE] Kp set to %.3f\n", pGState->pidController.Kp);
+        bleReportStatus(pGState, "KP", true);
       } else {
         Serial.printf("[BLE] WARNING: Rejected invalid Kp %.3f\n", newKp);
+        bleReportStatus(pGState, "KP", false, isnan(newKp) ? "fmt" : "range");
       }
     }
-    
+
     // ===== KI =====
     else if (uuid == UUID_KI) {
       double newKi = toF(val);
@@ -96,11 +118,13 @@ public:
         pGState->pidController.Ki = constrain(newKi, 0.01, 10.0);
         PreferencesManager::setKi(pGState->pidController.Ki, pGState->pidController.pidMode);
         Serial.printf("[BLE] Ki set to %.3f\n", pGState->pidController.Ki);
+        bleReportStatus(pGState, "KI", true);
       } else {
         Serial.printf("[BLE] WARNING: Rejected invalid Ki %.3f\n", newKi);
+        bleReportStatus(pGState, "KI", false, isnan(newKi) ? "fmt" : "range");
       }
     }
-    
+
     // ===== KD =====
     else if (uuid == UUID_KD) {
       double newKd = toF(val);
@@ -108,21 +132,27 @@ public:
         pGState->pidController.Kd = constrain(newKd, 0.1, 1000.0);
         PreferencesManager::setKd(pGState->pidController.Kd, pGState->pidController.pidMode);
         Serial.printf("[BLE] Kd set to %.3f\n", pGState->pidController.Kd);
+        bleReportStatus(pGState, "KD", true);
       } else {
         Serial.printf("[BLE] WARNING: Rejected invalid Kd %.3f\n", newKd);
+        bleReportStatus(pGState, "KD", false, isnan(newKd) ? "fmt" : "range");
       }
     }
-    
+
     // ===== DEFAULT SETPOINT =====
     else if (uuid == UUID_DEFAULT_SP) {
-      if (!val.empty()) {
-        double v = toF(val);
+      double v = toF(val);
+      if (!val.empty() && !isnan(v)) {
         pGState->pidController.defaultSetpoint = v;
         PreferencesManager::setDefaultSetpoint(v);
         Serial.printf("[BLE] Default SP set to %.1fC\n", v);
+        bleReportStatus(pGState, "DSP", true);
+      } else {
+        Serial.printf("[BLE] WARNING: Rejected invalid default setpoint '%s'\n", val.c_str());
+        bleReportStatus(pGState, "DSP", false, "fmt");
       }
     }
-    
+
     // ===== UNIT =====
     else if (uuid == UUID_UNIT) {
       if (!val.empty()) {
@@ -131,16 +161,75 @@ public:
         pGState->menu.tempUnitIsC = isC;
         PreferencesManager::setTempUnitC(isC);
         Serial.printf("[BLE] Unit set to %s\n", isC ? "C" : "F");
+        bleReportStatus(pGState, "UNIT", true);
+      } else {
+        bleReportStatus(pGState, "UNIT", false, "empty");
       }
     }
-    
+
     // ===== OUTPUT (manual mode) =====
     else if (uuid == UUID_OUT) {
       int newOut = constrain(atoi(val.c_str()), 0, (int)PWM_MAX);
       pGState->pidController.pidOutput = newOut;
       Serial.printf("[BLE] Output set to %d\n", newOut);
+      bleReportStatus(pGState, "OUT", true);
     }
-    
+
+    // ===== MODE =====
+    // Fix F2: the app writes the PID mode here (Auto=0, Manual=1, U1=2, U2=3, Config=4).
+    // Previously there was no handler, so mode changes from the phone were silently ignored.
+    else if (uuid == UUID_MODE) {
+      if (!val.empty()) {
+        int m = atoi(val.c_str());
+        if (m >= 0 && m <= 4) {
+          applyPidMode(m);   // applies mode and echoes back over chMode/chModeRead
+          Serial.printf("[BLE] Mode set to %d\n", m);
+          bleReportStatus(pGState, "MODE", true);
+        } else {
+          Serial.printf("[BLE] WARNING: Rejected invalid mode %d\n", m);
+          bleReportStatus(pGState, "MODE", false, "range");
+        }
+      } else {
+        bleReportStatus(pGState, "MODE", false, "empty");
+      }
+    }
+
+    // ===== SAVE SCRIPT (per-profile note/script persistence) =====
+    // Fix A2: the app writes "SAVE:<profile>:<payload>" (profile = AUTO | U1 | U2, or
+    // 0 | 2 | 3). We persist <payload> to NVS under a per-profile key and echo it back so a
+    // subsequent read returns the last-saved value. The firmware does not "execute" scripts;
+    // this is durable per-profile string storage that the app can read/write.
+    else if (uuid == UUID_SAVE_SCRIPT) {
+      if (val.compare(0, 5, "SAVE:") == 0) {
+        std::string rest = val.substr(5);
+        size_t sep = rest.find(':');
+        std::string profile = (sep == std::string::npos) ? rest : rest.substr(0, sep);
+        std::string payload = (sep == std::string::npos) ? std::string() : rest.substr(sep + 1);
+
+        const char* key = nullptr;
+        if (profile == "AUTO" || profile == "Auto" || profile == "0") key = "s_auto";
+        else if (profile == "U1" || profile == "u1" || profile == "2") key = "s_u1";
+        else if (profile == "U2" || profile == "u2" || profile == "3") key = "s_u2";
+
+        if (key != nullptr) {
+          if (payload.size() > 512) payload = payload.substr(0, 512);  // bound NVS usage
+          Preferences prefs;
+          prefs.begin("atom_script", false);
+          prefs.putString(key, payload.c_str());
+          prefs.end();
+          c->setValue(payload);   // echo stored value for readback
+          Serial.printf("[BLE] Saved script for %s (%u bytes)\n", profile.c_str(), (unsigned)payload.size());
+          bleReportStatus(pGState, "SCRIPT", true);
+        } else {
+          Serial.printf("[BLE] WARNING: Unknown script profile '%s'\n", profile.c_str());
+          bleReportStatus(pGState, "SCRIPT", false, "profile");
+        }
+      } else {
+        Serial.println(F("[BLE] WARNING: Bad script command (expected SAVE:<profile>:<payload>)"));
+        bleReportStatus(pGState, "SCRIPT", false, "cmd");
+      }
+    }
+
     pGState->diagnostics.bleWrites++;
   }
 };
@@ -174,10 +263,33 @@ void BLEManager::init(GlobalState& gState) {
   pGState->ble.chDefaultSp = svc->createCharacteristic(UUID_DEFAULT_SP, propsRWEnc);
   pGState->ble.chUnit = svc->createCharacteristic(UUID_UNIT, propsRWEnc | NIMBLE_PROPERTY::NOTIFY);
   pGState->ble.chTcStatus = svc->createCharacteristic(UUID_TC_STATUS, propsRNEnc);
-  
+
+  // Write-result ack characteristic: notifies "OK:<FIELD>" / "ERR:<FIELD>:<reason>" after
+  // each processed write, so a rejected value is visible in the app UI (previously only
+  // logged to serial). See bleReportStatus() above.
+  pGState->ble.chStatus = svc->createCharacteristic(UUID_STATUS, propsRNEnc);
+  pGState->ble.chStatus->setValue("OK:INIT");
+
+  // Protocol/contract version (read-only). The app reads this and warns if it doesn't match the
+  // version it was built against. Local pointer is enough — never written or notified after init.
+  {
+    NimBLECharacteristic* chVer = svc->createCharacteristic(UUID_PROTOCOL_VERSION,
+        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::READ_ENC);
+    char vbuf[8];
+    snprintf(vbuf, sizeof(vbuf), "%d", BLE_PROTOCOL_VERSION);
+    chVer->setValue(std::string(vbuf));
+  }
+
+  // Fix A2: per-profile script/note characteristic. The app writes
+  // "SAVE:<profile>:<payload>" here; the firmware persists <payload> to NVS keyed by
+  // profile and echoes the last-saved value back on read. Local pointer is enough — it is
+  // only referenced by UUID inside the write callback, so it needs no GlobalState field.
+  NimBLECharacteristic* chSaveScript = svc->createCharacteristic(UUID_SAVE_SCRIPT, propsRWEnc);
+  chSaveScript->setValue("");
+
   // Initialize TC status
   pGState->ble.chTcStatus->setValue("1");
-  
+
   // Set callbacks
   static BLEManagerCallbacks cb(gState);
   pGState->ble.chEnable->setCallbacks(&cb);
@@ -188,12 +300,18 @@ void BLEManager::init(GlobalState& gState) {
   pGState->ble.chMode->setCallbacks(&cb);
   pGState->ble.chOut->setCallbacks(&cb);
   pGState->ble.chUnit->setCallbacks(&cb);
-  
+  chSaveScript->setCallbacks(&cb);
+
   svc->start();
   
   // Start advertising
-  NimBLEDevice::setSecurityAuth(true, true, true);
-  NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_YESNO);
+  // Fix F4: use "Just Works" pairing (bonding + secure connections, but no MITM).
+  // The previous MITM + DISPLAY_YESNO combo required a numeric-comparison confirm that this
+  // device has no UI to complete, so iOS pairing would stall. NO_INPUT_OUTPUT lets iOS pair
+  // silently. (To require MITM later, restore DISPLAY_YESNO AND implement an onConfirmPIN
+  // callback that shows the code on the OLED and confirms with the encoder.)
+  NimBLEDevice::setSecurityAuth(true, false, true);
+  NimBLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT);
   
   NimBLEAdvertising* adv = NimBLEDevice::getAdvertising();
   NimBLEAdvertisementData advData;
@@ -256,7 +374,8 @@ void BLEManager::notifyAllCharacteristics() {
   if (pGState->ble.chModeRead) pGState->ble.chModeRead->notify();
   if (pGState->ble.chUnit) pGState->ble.chUnit->notify();
   if (pGState->ble.chTcStatus) pGState->ble.chTcStatus->notify();
-  
+  if (pGState->ble.chStatus) pGState->ble.chStatus->notify();
+
   Serial.println("[BLE] All characteristics notified");
 }
 

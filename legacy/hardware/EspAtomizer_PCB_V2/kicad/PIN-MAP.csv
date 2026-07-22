@@ -1,0 +1,22 @@
+Function,Suggested GPIO Type,Suggested Constraints / Notes
+SPI_SCK,SPI,Suggested: use a non-strap, high-speed capable GPIO. Keep trace short to MAX6675.
+SPI_MISO,SPI (MISO),Use dedicated MISO-capable pin; avoid strap pins.
+MAX6675_CS,GPIO,Any spare non-strap GPIO; keep near MAX6675.
+UART_TX,UART,Route to programming header or USB-UART chip. Use default TX0 if available.
+UART_RX,UART,Route to programming header or USB-UART chip. Use default RX0 if available.
+EN,GPIO (RESET),100k pull-up; expose to reset button and programmer.
+IO0,GPIO (BOOT),Expose for manual/auto-programming if desired; keep accessible to programmer.
+BAT_ADC,ADC,Must be ADC-capable pin. Add voltage divider so ADC < Vref. Avoid strap pins.
+MOSFET_GATE,GPIO (PWM capable preferred),Use PWM-capable non-strap GPIO; add 100Ω gate series resistor and 100k pulldown.
+CHG_STAT,GPIO (input),Connect to MCP73871 STAT (open-drain). Use GPIO with input capability; add pull-up if needed.
+I2C_SDA,I2C,Optional for sensors. Use same pin constraints (not a strap pin).
+I2C_SCL,I2C,Optional for sensors.
+SPI_MOSI,SPI (if needed),MAX6675 is MISO-only; MOSI may be unused but reserve if other SPI devices added.
+GPIO_LED,GPIO,Status LED (active low recommended); choose any spare GPIO.
+BOOT_SEL,GPIO,If using an auto-program circuit, pick non-strap pins for control signals.
+
+Notes:, ,
+- These are suggested signal roles and constraints, NOT exact module pin numbers. You MUST map these signals to explicit module pad numbers using the official `ESP32-C6-MINI-1-N4` datasheet before layout.
+- Avoid using known boot/strap pins for `MOSFET_GATE`, `MAX6675_CS`, or persistent-level signals. Consult the module datasheet for strap pin list.
+- For `BAT_ADC` design the resistor divider to keep ADC input below 1.0 * ADC Vref (account for resistor tolerance and ADC input leakage). Use low source impedance (<100k recommended) or a buffer.
+- If you want a concrete pin→pad mapping, upload the module pinout PDF or allow me to read your `ESPAtomizer_v2.kicad_sch` and I will propose exact pad numbers (read-only by default).

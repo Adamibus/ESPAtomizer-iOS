@@ -23,8 +23,10 @@
 #define BOARD_XIAO_ESP32_C6 6
 
 // Features
+// BLE is ON by default: the iOS app talks to the device only over Bluetooth LE.
+// Override with -DUSE_BLE=0 at build time if you want a BLE-less build.
 #ifndef USE_BLE
-#define USE_BLE 0
+#define USE_BLE 1
 #endif
 #ifndef USE_WIFI
 #define USE_WIFI 0
@@ -125,6 +127,18 @@
 #define LEFT_ROW_PIN_5 U2_PAD5_GPIO
 #define LEFT_ROW_PIN_6 U2_PAD6_GPIO
 #define LEFT_ROW_PIN_7 U2_PAD7_GPIO
+
+// Status LED. The XIAO ESP32-C6 defines LED_BUILTIN (onboard user LED); the XIAO ESP32-C3 has
+// no user LED, so the core leaves LED_BUILTIN undefined and the status-blink code must be
+// disabled. STATUS_LED_PIN < 0 disables it; override at build time if you wire an external LED
+// (e.g. -DSTATUS_LED_PIN=10).
+#ifndef STATUS_LED_PIN
+  #ifdef LED_BUILTIN
+    #define STATUS_LED_PIN LED_BUILTIN
+  #else
+    #define STATUS_LED_PIN -1
+  #endif
+#endif
 
 // Serial
 #ifndef SERIAL_BAUD

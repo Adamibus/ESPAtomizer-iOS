@@ -1,8 +1,13 @@
 # ESPAtomizer BLE Protocol Documentation
 
-**Version**: 1.0  
-**Last Updated**: December 30, 2025  
+**Contract version**: 1 (`BLE_PROTOCOL_VERSION` in `ESPAtomizer/ble.h` = app `expectedProtocolVersion`)  
+**Doc revision**: 2.0 — July 2026  
 **Device**: ESP32 with NimBLE (BLE 5.0)
+
+> **This document is the source of truth for the BLE contract.** Firmware UUID/payload changes
+> and the app's `AtomizerViewModel.swift` must match what's written here, and the contract
+> version above must be bumped on any breaking change. `tools/ble_contract_check.py` enforces
+> that the firmware and app agree (run it in CI / pre-commit).
 
 ---
 
@@ -38,7 +43,7 @@ The ESPAtomizer uses Bluetooth Low Energy (BLE) for wireless communication betwe
 | Service UUID | `b09aa6b5-0f22-4d9c-9dbc-6e3c7d9b2f0a` |
 | Device Name | `Adamizer` (from BLE_NAME_PRESETS) |
 | Connectable | Yes |
-| Number of Characteristics | 18 |
+| Number of Characteristics | 16 |
 
 ---
 
@@ -129,25 +134,25 @@ The ESPAtomizer uses Bluetooth Low Energy (BLE) for wireless communication betwe
 
 ---
 
-#### 6. **Mode** (Control Mode Selection & Preset Save)
+#### 6. **Mode** (Control Mode Selection)
 - **UUID**: `3f1a0006-2a8d-4a54-8f2f-b7cd2b4b8001`
 - **Properties**: READ, WRITE
-- **Format**: UTF-8 String
-- **Valid Mode Strings**:
-  - `"AUTO"` = Auto mode (Kp, Ki, Kd active)
-  - `"MAN"` = Manual mode (fixed output)
-  - `"U1"` = U1 preset
-  - `"U2"` = U2 preset
-- **Preset Save Format** (if firmware supports):
-  - `"SAVE:U1"` = Save current U1 tunings to NVS
-  - `"SAVE:U2"` = Save current U2 tunings to NVS
-- **Response**: Device switches mode; U1/U2 load tunings from storage
+- **Format**: UTF-8 String containing a **decimal integer** (parsed with `atoi`)
+- **Valid Values**:
+  - `"0"` = Auto (Kp/Ki/Kd active, default setpoint)
+  - `"1"` = Manual (fixed output)
+  - `"2"` = U1 preset
+  - `"3"` = U2 preset
+  - `"4"` = Config
+- **Response**: Device calls `applyPidMode(n)` and echoes the new mode on **Mode Read** (`…8002`).
+- **⚠ Not** `"AUTO"/"MAN"/…` — those are rejected (`atoi` reads them as `0`). Preset *saving*
+  is a separate concern: per-mode tunings persist automatically on each Kp/Ki/Kd/Setpoint write,
+  and free-form per-profile notes use **Save Script** (`3f1a00ff…`), not this characteristic.
 - **Example**:
   ```
-  Write: "AUTO"   → Switch to auto mode, load default PID
-  Write: "MAN"    → Switch to manual, use pidOutput value
-  Write: "U1"     → Load U1 preset (Kp, Ki, Kd, Setpoint)
-  Write: "SAVE:U2" → Persist current U2 settings to NVS
+  Write: "0"   → Auto mode
+  Write: "1"   → Manual mode
+  Write: "2"   → Load U1 preset (Kp, Ki, Kd, Setpoint)
   ```
 
 ---
@@ -185,7 +190,7 @@ The ESPAtomizer uses Bluetooth Low Energy (BLE) for wireless communication betwe
 ---
 
 #### 9. **Temperature Unit**
-- **UUID**: `3f1a000f-2a8d-4a54-8f2f-b7cd2b4b8001` (assumed)
+- **UUID**: `3f1a000b-2a8d-4a54-8f2f-b7cd2b4b8001`
 - **Properties**: READ, WRITE, NOTIFY
 - **Format**: UTF-8 String
 - **Valid Values**:
@@ -200,6 +205,39 @@ The ESPAtomizer uses Bluetooth Low Energy (BLE) for wireless communication betwe
   Write: "F"      → Temperature display in Fahrenheit
   Read:  "C"      → Current unit is Celsius
   ```
+
+---
+
+#### 10. **Save Script** (Per-Profile Note Storage)
+- **UUID**: `3f1a00ff-0000-0000-0000-000000000001`
+- **Properties**: READ, WRITE
+- **Format**: UTF-8 String, command `SAVE:<profile>:<payload>`
+- **Profiles**: `AUTO` (or `0`), `U1` (or `2`), `U2` (or `3`)
+- **Behavior**: Persists `<payload>` (≤512 bytes) to NVS namespace `atom_script` keyed by profile,
+  and echoes the stored value back on read. The firmware does **not** execute scripts — this is
+  durable per-profile string storage. Not yet called by the app.
+- **Example**: `Write: "SAVE:U1:tap-load 30s"` → stored under `s_u1`, read returns `"tap-load 30s"`
+
+---
+
+#### 11. **Status / Write Ack** (Read-Only, Notifiable)
+- **UUID**: `3f1a000d-2a8d-4a54-8f2f-b7cd2b4b8001`
+- **Properties**: READ, NOTIFY
+- **Format**: UTF-8 String — `OK:<FIELD>` or `ERR:<FIELD>:<reason>`
+- **Behavior**: Notified after **every** processed write so the client can tell "applied" from
+  "silently rejected". `<FIELD>` ∈ `EN, SP, KP, KI, KD, DSP, UNIT, OUT, MODE, SCRIPT`;
+  `<reason>` ∈ `range, fmt, profile, cmd, empty`. Initial value `OK:INIT`.
+- **Example**: setpoint `"999"` (out of range) → notify `ERR:SP:range`
+
+---
+
+#### 12. **Protocol Version** (Read-Only)
+- **UUID**: `3f1a000e-2a8d-4a54-8f2f-b7cd2b4b8001`
+- **Properties**: READ
+- **Format**: UTF-8 String containing the integer contract version (currently `"1"`)
+- **Behavior**: The app reads this on connect and warns the user if it differs from the version
+  it was built against (`expectedProtocolVersion`). Bump `BLE_PROTOCOL_VERSION` in `ble.h`,
+  `expectedProtocolVersion` in the app, and the header of this doc together on any breaking change.
 
 ---
 
@@ -470,24 +508,26 @@ func updatePIDForMode(_ mode: Int, kp: Double, ki: Double, kd: Double) {
 
 ### Characteristic UUIDs
 
+All 16 characteristics (must match `ESPAtomizer/ble.h` and the app's `AtomizerViewModel.swift`):
+
 | Name | UUID | Purpose |
 |------|------|---------|
-| Enable | `3f1a0001-2a8d-4a54-8f2f-b7cd2b4b8001` | Power on/off |
-| Setpoint | `3f1a0002-2a8d-4a54-8f2f-b7cd2b4b8001` | Target temperature |
-| Kp | `3f1a0003-2a8d-4a54-8f2f-b7cd2b4b8001` | P gain |
-| Ki | `3f1a0004-2a8d-4a54-8f2f-b7cd2b4b8001` | I gain |
-| Kd | `3f1a0005-2a8d-4a54-8f2f-b7cd2b4b8001` | D gain |
-| Mode (Write) | `3f1a0006-2a8d-4a54-8f2f-b7cd2b4b8001` | Mode selection |
+| Enable | `3f1a0001-2a8d-4a54-8f2f-b7cd2b4b8001` | Power on/off (RW) |
+| Setpoint | `3f1a0002-2a8d-4a54-8f2f-b7cd2b4b8001` | Target temperature (RW) |
+| Kp | `3f1a0003-2a8d-4a54-8f2f-b7cd2b4b8001` | P gain (RW) |
+| Ki | `3f1a0004-2a8d-4a54-8f2f-b7cd2b4b8001` | I gain (RW) |
+| Kd | `3f1a0005-2a8d-4a54-8f2f-b7cd2b4b8001` | D gain (RW) |
+| Mode (Write) | `3f1a0006-2a8d-4a54-8f2f-b7cd2b4b8001` | Mode selection, integer `0`–`4` (RW) |
 | Temperature | `3f1a0007-2a8d-4a54-8f2f-b7cd2b4b8001` | Current temp (RO, Notify) |
-| Output | `3f1a0008-2a8d-4a54-8f2f-b7cd2b4b8001` | PWM output |
-| Battery | `3f1a0009-2a8d-4a54-8f2f-b7cd2b4b8001` | Battery % or voltage |
-| Default Setpoint | `3f1a000a-2a8d-4a54-8f2f-b7cd2b4b8001` | Default SP value |
+| Output | `3f1a0008-2a8d-4a54-8f2f-b7cd2b4b8001` | PWM output (RW) |
+| Battery | `3f1a0009-2a8d-4a54-8f2f-b7cd2b4b8001` | Battery % or voltage (RO, Notify) |
 | Mode (Read) | `3f1a0006-2a8d-4a54-8f2f-b7cd2b4b8002` | Current mode (RO, Notify) |
-| Unit | `UUID_UNIT` | Temp unit (C/F) |
-| U1 Preheat Enable | `UUID_PREU1_ENABLED` | U1 preheat on/off |
-| U1 Preheat MS | `UUID_PREU1_MS` | U1 preheat duration |
-| U2 Preheat Enable | `UUID_PREU2_ENABLED` | U2 preheat on/off |
-| U2 Preheat MS | `UUID_PREU2_MS` | U2 preheat duration |
+| Default Setpoint | `3f1a000a-2a8d-4a54-8f2f-b7cd2b4b8001` | Default SP value (RW) |
+| Unit | `3f1a000b-2a8d-4a54-8f2f-b7cd2b4b8001` | Temp unit C/F (RW, Notify) |
+| TC Status | `3f1a000c-2a8d-4a54-8f2f-b7cd2b4b8001` | Thermocouple OK/fault (RO, Notify) |
+| Status / Ack | `3f1a000d-2a8d-4a54-8f2f-b7cd2b4b8001` | Write result `OK:`/`ERR:` (RO, Notify) |
+| Protocol Version | `3f1a000e-2a8d-4a54-8f2f-b7cd2b4b8001` | BLE contract version (RO) |
+| Save Script | `3f1a00ff-0000-0000-0000-000000000001` | Per-profile note storage (RW) |
 
 ---
 

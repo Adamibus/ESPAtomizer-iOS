@@ -377,8 +377,12 @@ void setup() {
   }
 #endif
 
-  pinMode(LED_BUILTIN, OUTPUT); // Onboard LED for status
-  digitalWrite(LED_BUILTIN, LOW); // Start off
+  // Onboard LED for status. STATUS_LED_PIN is -1 on boards without one (XIAO ESP32-C3);
+  // the constant guard lets the compiler drop the calls entirely there. See config.h.
+  if (STATUS_LED_PIN >= 0) {
+    pinMode(STATUS_LED_PIN, OUTPUT);
+    digitalWrite(STATUS_LED_PIN, LOW); // Start off
+  }
 
   Serial.println();
   Serial.println(F("ESP PID Temperature Controller starting..."));
@@ -744,15 +748,17 @@ void loop() {
 #if USE_BAT
   charging = (gState.battery.percent < 100 && gState.battery.voltage > BAT_MIN_V);
 #endif
-  if (gState.pidController.systemEnabled) {
-    if (charging) {
-      if ((now - ledBlinkTimer) > 500) { ledBlinkTimer = now; ledBlinkState = !ledBlinkState; }
-      digitalWrite(LED_BUILTIN, ledBlinkState ? HIGH : LOW);
+  if (STATUS_LED_PIN >= 0) {
+    if (gState.pidController.systemEnabled) {
+      if (charging) {
+        if ((now - ledBlinkTimer) > 500) { ledBlinkTimer = now; ledBlinkState = !ledBlinkState; }
+        digitalWrite(STATUS_LED_PIN, ledBlinkState ? HIGH : LOW);
+      } else {
+        digitalWrite(STATUS_LED_PIN, HIGH);
+      }
     } else {
-      digitalWrite(LED_BUILTIN, HIGH);
+      digitalWrite(STATUS_LED_PIN, LOW);
     }
-  } else {
-    digitalWrite(LED_BUILTIN, LOW);
   }
 
   // Button debouncing and actions
@@ -1158,6 +1164,22 @@ void loop() {
       }
   #endif
         }
+
+      // Fix F3: publish battery percent over BLE (~every 5s). chBat was created but never
+      // populated before, so the app's battery readout stayed blank. battery is sampled at
+      // the top of loop() via sampleBattery(), so gState.battery.percent is current here.
+  #if USE_BLE
+      {
+        static unsigned long lastBatBleMs = 0;
+        if (gState.ble.chBat && bleIsConnected() && (now - lastBatBleMs) >= 5000UL) {
+          lastBatBleMs = now;
+          char bbuf[16];
+          snprintf(bbuf, sizeof(bbuf), "%d", gState.battery.percent);
+          gState.ble.chBat->setValue(std::string(bbuf));
+          gState.ble.chBat->notify();
+        }
+      }
+  #endif
 
       // Periodic serial status prints for realtime visibility (can be toggled off)
       if ((now - gState.timing.lastTempPrintMs) >= TEMP_PRINT_INTERVAL_MS) {

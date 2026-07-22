@@ -25,8 +25,7 @@
       "unconnected-(U3-3V3_1-Pad24)",
       "unconnected-(U3-5V-Pad14)",
       "unconnected-(U3-GPIO18_D10_MOSI-Pad11)",
-      "/LEDA",
-      "unconnected-(D1-DOUT-Pad1)",
+      "unconnected-(U3-GPIO17_D7_RX-Pad8)",
       "unconnected-(U3-GPIO19_D8_SCK-Pad9)",
       "unconnected-(U3-GPIO20_D9_MISO-Pad10)"
     ],

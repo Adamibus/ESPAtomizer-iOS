@@ -33,6 +33,15 @@ static const char* UUID_MODE_READ = "3f1a0006-2a8d-4a54-8f2f-b7cd2b4b8002";
 static const char* UUID_DEFAULT_SP = "3f1a000a-2a8d-4a54-8f2f-b7cd2b4b8001";
 static const char* UUID_UNIT = "3f1a000b-2a8d-4a54-8f2f-b7cd2b4b8001"; // "C" or "F"
 static const char* UUID_TC_STATUS     = "3f1a000c-2a8d-4a54-8f2f-b7cd2b4b8001"; // Thermocouple connection status
+static const char* UUID_SAVE_SCRIPT   = "3f1a00ff-0000-0000-0000-000000000001"; // Per-profile script/note storage; app writes "SAVE:<profile>:<payload>"
+static const char* UUID_STATUS        = "3f1a000d-2a8d-4a54-8f2f-b7cd2b4b8001"; // Write-result ack: notifies "OK:<FIELD>" or "ERR:<FIELD>:<reason>" after each processed write
+static const char* UUID_PROTOCOL_VERSION = "3f1a000e-2a8d-4a54-8f2f-b7cd2b4b8001"; // Read-only integer: BLE contract version (see BLE_PROTOCOL_VERSION)
+
+// BLE contract version. Bump when a characteristic UUID or payload format changes in a way the
+// app must know about. MUST stay in sync with docs/BLE-PROTOCOL.md and the app's
+// expectedProtocolVersion (AtomizerViewModel.swift). The contract test tools/ble_contract_check.py
+// verifies firmware and app agree.
+#define BLE_PROTOCOL_VERSION 1
 
 // Forward declare function used by callbacks in sketch
 void applyPidMode(int mode);

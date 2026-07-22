@@ -204,7 +204,8 @@ struct BLEState {
   NimBLECharacteristic *chDefaultSp = nullptr;
   NimBLECharacteristic *chUnit = nullptr;
   NimBLECharacteristic *chTcStatus = nullptr;
-  
+  NimBLECharacteristic *chStatus = nullptr;   // write-result ack ("OK:<FIELD>" / "ERR:<FIELD>:<reason>")
+
   // Animation state
   unsigned long animExpireMs = 0;
   bool animIsConnect = false;
