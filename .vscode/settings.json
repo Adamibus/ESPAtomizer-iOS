@@ -1,0 +1,32 @@
+{
+  "files.associations": {
+    "cmath": "cpp",
+    "array": "cpp",
+    "compare": "cpp",
+    "functional": "cpp",
+    "tuple": "cpp",
+    "type_traits": "cpp",
+    "utility": "cpp"
+  },
+
+  // Swift toolchain settings - explicit paths to avoid auto-discovery issues
+  "swift.path.swift_driver_bin": "C:\\Users\\adinj\\AppData\\Local\\Programs\\Swift\\Toolchains\\6.2.1+Asserts\\usr\\bin\\swift.exe",
+  "swift.path.sourcekit-lsp": "C:\\Users\\adinj\\AppData\\Local\\Programs\\Swift\\Toolchains\\6.2.1+Asserts\\usr\\bin\\sourcekit-lsp.exe",
+  "swift.path.swift": "C:\\Users\\adinj\\AppData\\Local\\Programs\\Swift\\Toolchains\\6.2.1+Asserts\\usr\\bin\\swift.exe"
+}
+{
+    "files.associations": {
+        "cmath": "cpp",
+        "array": "cpp",
+        "compare": "cpp",
+        "functional": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp"
+    }
+
+    // Swift toolchain settings - added so VS Code Swift extension can locate the toolchain
+    ,"swift.path.swift_driver_bin": "C:\\Users\\adinj\\AppData\\Local\\Programs\\Swift\\Toolchains\\6.2.1+Asserts\\usr\\bin\\swift.exe",
+    "swift.path.sourcekit-lsp": "C:\\Users\\adinj\\AppData\\Local\\Programs\\Swift\\Toolchains\\6.2.1+Asserts\\usr\\bin\\sourcekit-lsp.exe",
+    "swift.path.swift": "C:\\Users\\adinj\\AppData\\Local\\Programs\\Swift\\Toolchains\\6.2.1+Asserts\\usr\\bin\\swift.exe"
+}

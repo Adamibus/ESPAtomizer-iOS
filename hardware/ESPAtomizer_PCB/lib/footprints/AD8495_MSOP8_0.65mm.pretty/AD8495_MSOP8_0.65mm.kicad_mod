@@ -1,0 +1,7 @@
+; FOOTPRINT MOVED
+; This footprint was moved to the v3 library to keep v1 unchanged.
+; New location:
+; hardware/ESPAtomizer_PCB_v3/lib/footprints/AD8495_MSOP8_0.65mm.pretty/AD8495_MSOP8_0.65mm.kicad_mod
+
+; If you need to use this footprint, point your symbol's Footprint property to the v3 path.
+

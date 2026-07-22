@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESPAtomizer UI Mockup</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: linear-gradient(180deg, #f6f7f9 0%, #e9ebf1 100%);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .iphone-frame {
+      background: #222;
+      border-radius: 48px;
+      box-shadow: 0 8px 32px #0005, 0 1px 0 #fff2 inset;
+      width: 390px;
+      height: 844px;
+      padding: 24px 0;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .notch {
+      width: 210px;
+      height: 32px;
+      background: #111;
+      border-radius: 0 0 18px 18px;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .status-bar {
+      width: 100%;
+      height: 24px;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      color: #fff;
+      font-size: 13px;
+      position: absolute;
+      top: 12px;
+      left: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .container {
+      width: 342px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 32px;
+      box-shadow: 0 4px 24px #0002, 0 1px 0 #fff2 inset;
+      padding: 28px 20px 20px 20px;
+      min-height: 780px;
+      position: relative;
+      top: 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 18px;
+      font-size: 1.7em;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+      color: #222;
+    }
+    .status, .controls, .connection { margin-bottom: 24px; }
+    .status-panel { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .status-block { text-align: center; flex: 1; }
+    .status-block:not(:last-child) { margin-right: 12px; }
+    .status-label { font-size: 13px; color: #8e8e93; font-weight: 500; }
+    .status-value { font-size: 2em; font-weight: 600; color: #222; }
+    .status-mode { font-size: 1.2em; color: #007aff; font-weight: 500; }
+    .status-power.on { color: #34c759; }
+    .status-power.off { color: #ff3b30; }
+    .battery-low { color: #ff3b30; font-weight: bold; }
+    .controls label { font-size: 15px; margin-bottom: 6px; display: block; color: #222; font-weight: 500; }
+    .slider-row, .pid-row { display: flex; gap: 10px; margin-bottom: 10px; }
+    .slider-row input[type=range] { flex: 1; accent-color: #007aff; }
+    .pid-row input { width: 60px; border-radius: 8px; border: 1px solid #e5e5ea; padding: 6px; font-size: 15px; background: #f2f2f7; }
+    .tab-bar { display: flex; gap: 6px; margin-bottom: 10px; background: #f2f2f7; border-radius: 12px; padding: 4px; }
+    .tab-btn {
+      flex: 1;
+      padding: 10px 0;
+      border-radius: 8px;
+      border: none;
+      background: #f2f2f7;
+      color: #007aff;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      box-shadow: none;
+    }
+    .tab-btn.active, .tab-btn[style*="background:#007aff"] {
+      background: #007aff !important;
+      color: #fff !important;
+      border: none !important;
+    }
+    .toggle-btn {
+      padding: 12px 0;
+      border-radius: 10px;
+      border: none;
+      background: #007aff;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px #007aff22;
+      transition: background 0.2s;
+    }
+    .toggle-btn.off {
+      background: #ff3b30;
+    }
+    .script-area {
+      width: 100%;
+      height: 60px;
+      border-radius: 8px;
+      border: 1px solid #e5e5ea;
+      padding: 8px;
+      font-size: 15px;
+      background: #f2f2f7;
+      margin-bottom: 8px;
+    }
+    .connection {
+      text-align: center;
+      margin-top: auto;
+      margin-bottom: 0;
+      padding-bottom: 8px;
+    }
+    .connect-btn {
+      padding: 10px 32px;
+      border-radius: 10px;
+      border: none;
+      background: #fff;
+      color: #007aff;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 8px #007aff22;
+      border: 1px solid #007aff;
+      margin-right: 0;
+      margin-bottom: 0;
+      transition: background 0.2s, color 0.2s;
+    }
+    .disconnect-btn {
+      padding: 10px 32px;
+      border-radius: 10px;
+      border: none;
+      background: #fff;
+      color: #ff3b30;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 8px #ff3b3022;
+      border: 1px solid #ff3b30;
+      margin-left: 8px;
+      margin-bottom: 0;
+      transition: background 0.2s, color 0.2s;
+    }
+    .footer {
+      text-align: center;
+      font-size: 13px;
+      color: #8e8e93;
+      margin-top: 24px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="iphone-frame">
+    <div class="notch"></div>
+    <div class="status-bar">
+      <span>9:41</span>
+      <span>
+        <svg width="18" height="18" viewBox="0 0 18 18" style="vertical-align:middle"><rect x="2" y="6" width="2" height="6" rx="1" fill="#fff"/><rect x="6" y="4" width="2" height="8" rx="1" fill="#fff"/><rect x="10" y="2" width="2" height="10" rx="1" fill="#fff"/><rect x="14" y="8" width="2" height="4" rx="1" fill="#fff"/></svg>
+        <svg width="18" height="18" viewBox="0 0 18 18" style="vertical-align:middle"><circle cx="9" cy="9" r="7" stroke="#fff" stroke-width="2" fill="none"/><rect x="13" y="7" width="2" height="4" rx="1" fill="#fff"/></svg>
+      </span>
+    </div>
+    <div class="container">
+      <div style="display:flex;align-items:center;justify-content:center;margin-bottom:18px;gap:16px;">
+        <span style="font-size:1.7em;font-weight:600;letter-spacing:-0.5px;color:#222;">Adamizer</span>
+        <img src="AppIconTinted.png" alt="Adamizer App Icon" style="width:48px;height:48px;border-radius:12px;box-shadow:0 2px 8px #0002;object-fit:cover;" onerror="this.alt='App icon not found';this.style.opacity=0.5;" />
+      </div>
+      <div class="status">
+        <div class="status-panel">
+          <div class="status-block">
+            <div class="status-label">Temperature</div>
+            <div class="status-value" id="temp">--.-°C</div>
+          </div>
+          <div class="status-block">
+            <div class="status-label">Setpoint</div>
+            <div class="status-value" id="setpoint">200.0°C</div>
+          </div>
+          <div class="status-block">
+            <div class="status-label">Output</div>
+            <div class="status-value" id="output">0%</div>
+          </div>
+        </div>
+        <div class="status-panel">
+          <div class="status-block">
+            <div class="status-label">Battery</div>
+            <div class="status-value" id="battery">--%</div>
+            <div id="batteryLow" class="battery-low" style="display:none;">LOW</div>
+          </div>
+          <div class="status-block">
+            <div class="status-label">Mode</div>
+            <div class="status-mode" id="mode">Auto</div>
+          </div>
+          <div class="status-block">
+            <div class="status-label">Power</div>
+            <div class="status-power off" id="power">OFF</div>
+          </div>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="toggle-btn off" id="powerToggle">Power OFF</button>
+        <div id="mainGraphContainer" style="text-align:center;display:none;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;justify-content:center;margin-bottom:2px;gap:18px;">
+            <div style="font-size:13px;color:#8e8e93;">Temp vs <span id="graphLabelMode">Setpoint</span> (last 60s)</div>
+            <div id="graphLegend" style="display:flex;align-items:center;gap:12px;">
+              <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:12px;height:4px;background:#007aff;border-radius:2px;"></span><span id="legendLabel1" style="color:#222;font-size:13px;">Setpoint</span></span>
+              <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:12px;height:4px;background:#ff9500;border-radius:2px;"></span><span id="legendLabel2" style="color:#222;font-size:13px;">Temp</span></span>
+              <button id="refreshGraphBtnLegend" title="Refresh Graph" style="margin-left:8px;padding:2px 6px;font-size:13px;border-radius:4px;border:1px solid #ccc;background:#f7f7f7;cursor:pointer;display:flex;align-items:center;gap:2px;">
+                <svg width="14" height="14" viewBox="0 0 20 20" style="vertical-align:middle;"><path d="M10 3v2a5 5 0 1 1-4.546 2.916" fill="none" stroke="#007aff" stroke-width="2"/><polyline points="7 8 5 7 6 5" fill="none" stroke="#007aff" stroke-width="2"/></svg>
+              </button>
+            </div>
+          </div>
+          <canvas id="mainTempGraph" width="320" height="80" style="background:#f2f2f7;border-radius:12px;box-shadow:0 2px 8px #0001;"></canvas>
+        </div>
+        <div class="tab-bar">
+          <button class="tab-btn active" id="tabAuto">Auto</button>
+          <button class="tab-btn" id="tabManual">Manual</button>
+          <button class="tab-btn" id="tabU1">U1</button>
+          <button class="tab-btn" id="tabU2">U2</button>
+          <button class="tab-btn" id="tabConfig">Config</button>
+        </div>
+        <div id="tabContent">
+          <!-- Tab content will be injected here -->
+        </div>
+      </div>
+      <div class="connection">
+        <div id="connectionStatusArea">
+          <button class="connect-btn" id="connectBtn">Connect</button>
+          <button class="disconnect-btn" id="disconnectBtn" style="display:none;">Disconnect</button>
+          <span id="connectionStatusText" style="display:none;font-size:15px;color:#34c759;font-weight:600;">Connected</span>
+        </div>
+      </div>
+      <div class="footer">
+        UI mockup for ESPAtomizer Swift app &mdash; compatible for migration to SwiftUI
+      </div>
+    </div>
+  </div>
+  <script>
+    // UI state
+    let powerOn = false;
+    let mode = 0; // 0=Auto,1=Manual,2=U1,3=U2,4=Config
+    let temp = 25.0;
+    let output = 0;
+    let battery = 85;
+    let batteryLow = false;
+    let manualOutput = 0;
+
+    // Consolidated app state
+    let appState = {
+      setpoints: [200.0, 200.0, 200.0, 200.0, 200.0], // Per-mode setpoints (Auto, Manual, U1, U2, Config)
+      pidTunings: [
+        {kp:10.0, ki:0.5, kd:50.0},
+        {kp:10.0, ki:0.5, kd:50.0},
+        {kp:10.0, ki:0.5, kd:50.0},
+        {kp:10.0, ki:0.5, kd:50.0},
+        {kp:10.0, ki:0.5, kd:50.0}
+      ], // Per-mode PID tunings
+      manualOutput: 0,
+      defaultSetpoint: 200.0,
+      tempUnit: 'C' // 'C' or 'F'
+    };
+
+        // Restore config state from localStorage
+        function restoreConfigState() {
+          try {
+            const state = JSON.parse(localStorage.getItem('atomizerConfigState'));
+            if (!state) return;
+            if (Array.isArray(state.setpoints)) appState.setpoints = state.setpoints;
+            if (Array.isArray(state.pidTunings)) appState.pidTunings = state.pidTunings;
+            if (typeof state.manualOutput === 'number') appState.manualOutput = state.manualOutput;
+            if (typeof state.defaultSetpoint === 'number') appState.defaultSetpoint = state.defaultSetpoint;
+            if (typeof state.tempUnit === 'string') appState.tempUnit = state.tempUnit;
+          } catch(e) {}
+        }
+
+        // Save config state to localStorage
+        function saveConfigState() {
+          localStorage.setItem('atomizerConfigState', JSON.stringify(appState));
+        }
+
+        // Save state on page unload
+        window.addEventListener('beforeunload', saveConfigState);
+
+        // Restore state on page load
+        restoreConfigState();
+
+    function updateStatus() {
+      let tempDisplay = appState.tempUnit === 'C' ? temp : (temp * 9/5 + 32);
+      let setpointDisplay = appState.tempUnit === 'C' ? appState.setpoints[mode] : (appState.setpoints[mode] * 9/5 + 32);
+      document.getElementById('temp').textContent = tempDisplay.toFixed(1) + '°' + appState.tempUnit;
+      document.getElementById('setpoint').textContent = setpointDisplay.toFixed(1) + '°' + appState.tempUnit;
+      // Show manual output when in Manual mode, otherwise show automatic output
+      document.getElementById('output').textContent = (mode === 1 ? appState.manualOutput : output) + '%';
+      document.getElementById('battery').textContent = battery + '%';
+      document.getElementById('batteryLow').style.display = batteryLow ? '' : 'none';
+      document.getElementById('mode').textContent = ['Auto','Manual','U1','U2','Config'][mode];
+      document.getElementById('power').textContent = powerOn ? 'ON' : 'OFF';
+      document.getElementById('power').className = 'status-power ' + (powerOn ? 'on' : 'off');
+      document.getElementById('powerToggle').textContent = powerOn ? 'Power ON' : 'Power OFF';
+      document.getElementById('powerToggle').className = 'toggle-btn ' + (powerOn ? 'on' : 'off');
+      // Update per-mode setpoint summary in Config tab if present
+      if (document.getElementById('spAuto')) document.getElementById('spAuto').textContent = appState.setpoints[0].toFixed(1) + '°' + appState.tempUnit;
+      if (document.getElementById('spManual')) document.getElementById('spManual').textContent = appState.setpoints[1].toFixed(1) + '°' + appState.tempUnit;
+      if (document.getElementById('spU1')) document.getElementById('spU1').textContent = appState.setpoints[2].toFixed(1) + '°' + appState.tempUnit;
+      if (document.getElementById('spU2')) document.getElementById('spU2').textContent = appState.setpoints[3].toFixed(1) + '°' + appState.tempUnit;
+    }
+
+    function showTab(idx) {
+      mode = idx;
+      // Reset graph history arrays to avoid glitches when switching modes
+      window.mainTempHistory = Array(60).fill(temp);
+      window.mainSetpointHistory = Array(60).fill(appState.setpoints[idx]);
+      window.mainOutputHistory = Array(60).fill(appState.manualOutput);
+      document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === idx);
+      });
+      let html = '';
+      // Use stored PID tunings for this mode when available
+      const storedPid = (Array.isArray(appState.pidTunings) && appState.pidTunings[idx]) ? appState.pidTunings[idx] : {kp:10.0, ki:0.5, kd:50.0};
+      let kp = storedPid.kp, ki = storedPid.ki, kd = storedPid.kd;
+      if (idx === 0) { // Auto
+        let setpointDisplay = appState.tempUnit === 'C' ? appState.setpoints[0] : (appState.setpoints[0] * 9/5 + 32);
+        html += `<label>Setpoint: <span id="spVal">${setpointDisplay.toFixed(1)}°${appState.tempUnit}</span></label>
+          <div class="slider-row"><input type="range" min="30" max="315" step="0.5" value="${appState.setpoints[0]}" id="setpointSlider"></div>
+          <button class="tab-btn" id="togglePidInfoAuto" style="margin-bottom:8px;">Show PID Info</button>
+          <div id="pidInfoAuto" style='font-size:13px;color:#8e8e93;margin-bottom:8px;background:#f2f2f7;padding:8px 12px;border-radius:10px;display:none;'>
+            <strong>PID Tuning controls how the Adamizer maintains your set temperature:</strong><br>
+            <ul style='margin:6px 0 0 16px;padding:0;'>
+              <li><b>Kp</b> (Proportional): Reacts to the difference between current and target temperature. Higher Kp means faster response, but too high can cause overshoot.</li>
+              <li><b>Ki</b> (Integral): Corrects steady-state error by accumulating past differences. Too high can cause oscillation.</li>
+              <li><b>Kd</b> (Derivative): Reacts to the rate of temperature change. Helps dampen overshoot and stabilize response.</li>
+            </ul>
+            <span style='color:#007aff;'>Tip: Start with moderate Kp, low Ki, and moderate Kd. Adjust for stable, fast temperature control.</span>
+          </div>
+          <label>PID Tunings <span style='font-size:13px;color:#8e8e93;'>(Proportional, Integral, Derivative)</span></label>
+          <div style='font-size:13px;color:#8e8e93;margin-bottom:6px;'>
+            <span title='Kp: How strongly the system reacts to error. Typical range: 5-50.'>Kp: Proportional gain (5-50)</span> &bull; 
+            <span title='Ki: How much past error is accumulated. Typical range: 0.1-2.'>Ki: Integral gain (0.1-2)</span> &bull; 
+            <span title='Kd: How much the system reacts to change in error. Typical range: 10-100.'>Kd: Derivative gain (10-100)</span>
+          </div>
+          <div class="pid-row">
+            <input type="number" step="0.01" value="${kp}" id="kpInput" placeholder="Kp" title="Proportional gain (Kp): 5-50">
+            <input type="number" step="0.01" value="${ki}" id="kiInput" placeholder="Ki" title="Integral gain (Ki): 0.1-2">
+            <input type="number" step="0.01" value="${kd}" id="kdInput" placeholder="Kd" title="Derivative gain (Kd): 10-100">
+            <button class="tab-btn" id="resetPIDBtn" style="margin-left:10px;">↺ Default</button>
+          </div>
+          <button class="tab-btn" id="updatePID">Update PID</button>
+          <div style="text-align:center;margin-bottom:12px;">
+            <div id="mainGraphContainer" style="text-align:center;display:none;">
+              <div style="display:flex;align-items:center;justify-content:center;margin-bottom:2px;gap:18px;">
+                <div style="font-size:13px;color:#8e8e93;">Temp vs <span id="graphLabelMode">Setpoint</span> (last 60s)</div>
+                <div id="graphLegend" style="display:flex;align-items:center;gap:12px;">
+                  <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:12px;height:4px;background:#007aff;border-radius:2px;"></span><span id="legendLabel1" style="color:#222;font-size:13px;">Setpoint</span></span>
+                  <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:12px;height:4px;background:#ff9500;border-radius:2px;"></span><span id="legendLabel2" style="color:#222;font-size:13px;">Temp</span></span>
+                  <button id="refreshGraphBtn" title="Refresh Graph" style="margin-left:8px;padding:2px 6px;font-size:13px;border-radius:4px;border:1px solid #ccc;background:#f7f7f7;cursor:pointer;display:flex;align-items:center;gap:2px;">
+                    <svg width="14" height="14" viewBox="0 0 20 20" style="vertical-align:middle;"><path d="M10 3v2a5 5 0 1 1-4.546 2.916" fill="none" stroke="#007aff" stroke-width="2"/><polyline points="7 8 5 7 6 5" fill="none" stroke="#007aff" stroke-width="2"/></svg>
+                  </button>
+                </div>
+              </div>
+              <canvas id="mainTempGraph" width="320" height="80" style="background:#f2f2f7;border-radius:12px;box-shadow:0 2px 8px #0001;"></canvas>
+            </div>
+          </div>`;
+      } else if (idx === 1) { // Manual
+        html += `<label>Manual Output: <span id="manOutVal">${appState.manualOutput}%</span></label>
+          <div class="slider-row"><input type="range" min="0" max="100" step="1" value="${appState.manualOutput}" id="manualOutputSlider"></div>`;
+      } else if (idx === 2 || idx === 3) { // U1/U2
+        let setpointDisplay = appState.tempUnit === 'C' ? appState.setpoints[idx] : (appState.setpoints[idx] * 9/5 + 32);
+          html += `<label>Setpoint: <span id="spVal">${setpointDisplay.toFixed(1)}°${appState.tempUnit}</span></label>
+            <div class="slider-row"><input type="range" min="30" max="315" step="0.5" value="${appState.setpoints[idx]}" id="setpointSlider"></div>
+            <button class="tab-btn" id="togglePidInfoU${idx}" style="margin-bottom:8px;">Show PID Info</button>
+            <div id="pidInfoU${idx}" style='font-size:13px;color:#8e8e93;margin-bottom:8px;background:#f2f2f7;padding:8px 12px;border-radius:10px;display:none;'>
+              <strong>PID Tuning controls how the Adamizer maintains your set temperature:</strong><br>
+              <ul style='margin:6px 0 0 16px;padding:0;'>
+                <li><b>Kp</b> (Proportional): Reacts to the difference between current and target temperature. Higher Kp means faster response, but too high can cause overshoot.</li>
+                <li><b>Ki</b> (Integral): Corrects steady-state error by accumulating past differences. Too high can cause oscillation.</li>
+                <li><b>Kd</b> (Derivative): Reacts to the rate of temperature change. Helps dampen overshoot and stabilize response.</li>
+              </ul>
+              <span style='color:#007aff;'>Tip: Start with moderate Kp, low Ki, and moderate Kd. Adjust for stable, fast temperature control.</span>
+            </div>
+            <label>PID Tunings <span style='font-size:13px;color:#8e8e93;'>(Proportional, Integral, Derivative)</span></label>
+            <div style='font-size:13px;color:#8e8e93;margin-bottom:6px;'>
+              <span title='Kp: How strongly the system reacts to error. Typical range: 5-50.'>Kp: Proportional gain (5-50)</span> &bull; 
+              <span title='Ki: How much past error is accumulated. Typical range: 0.1-2.'>Ki: Integral gain (0.1-2)</span> &bull; 
+              <span title='Kd: How much the system reacts to change in error. Typical range: 10-100.'>Kd: Derivative gain (10-100)</span>
+            </div>
+            <div class="pid-row">
+              <input type="number" step="0.01" value="${kp}" id="kpInput" placeholder="Kp" title="Proportional gain (Kp): 5-50">
+              <input type="number" step="0.01" value="${ki}" id="kiInput" placeholder="Ki" title="Integral gain (Ki): 0.1-2">
+              <input type="number" step="0.01" value="${kd}" id="kdInput" placeholder="Kd" title="Derivative gain (Kd): 10-100">
+              <button class="tab-btn" id="resetPIDBtn" style="margin-left:10px;">↺ Default</button>
+            </div>
+            <button class="tab-btn" id="saveConfigBtn">Save Config</button>
+            <div style="text-align:center;margin-bottom:12px;">
+              <div id="mainGraphContainer" style="text-align:center;display:none;">
+                <div style="display:flex;align-items:center;justify-content:center;margin-bottom:2px;gap:18px;">
+                  <div style="font-size:13px;color:#8e8e93;">Temp vs <span id="graphLabelMode">Setpoint</span> (last 60s)</div>
+                  <div id="graphLegend" style="display:flex;align-items:center;gap:12px;">
+                    <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:12px;height:4px;background:#007aff;border-radius:2px;"></span><span id="legendLabel1" style="color:#222;font-size:13px;">Setpoint</span></span>
+                    <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:12px;height:4px;background:#ff9500;border-radius:2px;"></span><span id="legendLabel2" style="color:#222;font-size:13px;">Temp</span></span>
+                  </div>
+                  <button id="refreshGraphBtn" style="margin-left:16px;padding:4px 12px;font-size:0.95em;border-radius:6px;border:1px solid #ccc;background:#f7f7f7;cursor:pointer;">Refresh Graph</button>
+                </div>
+                <canvas id="mainTempGraph" width="320" height="80" style="background:#f2f2f7;border-radius:12px;box-shadow:0 2px 8px #0001;"></canvas>
+              </div>
+            </div>`;
+      } else if (idx === 4) { // Config
+        let defaultSetpointDisplay = appState.tempUnit === 'C' ? appState.defaultSetpoint : (appState.defaultSetpoint * 9/5 + 32);
+        html += `
+          <div style='background:#f2f2f7;padding:12px 16px;border-radius:14px;margin-bottom:16px;text-align:left;'>
+            <div style='font-size:15px;font-weight:600;color:#222;margin-bottom:6px;'>Device Info</div>
+            <div style='font-size:14px;color:#444;margin-bottom:2px;'>Name: <span id='deviceName'>ESPAtomizer-01</span></div>
+            <div style='font-size:14px;color:#444;margin-bottom:2px;'>Firmware: <span id='firmwareVersion'>v1.2.0</span></div>
+            <div style='font-size:14px;color:#444;margin-bottom:2px;'>Battery: <span id='deviceBattery'>${battery}%</span></div>
+            <div style='font-size:14px;color:#444;'>Status: <span id='deviceStatus'>${document.getElementById('disconnectBtn').style.display === '' ? 'Connected' : 'Disconnected'}</span></div>
+          </div>
+          <div style='background:#fff;padding:10px 12px;border-radius:12px;margin-bottom:12px;'>
+            <div style='font-size:14px;font-weight:600;color:#222;margin-bottom:6px;'>Per-mode Setpoints</div>
+            <div style='font-size:13px;color:#444;line-height:1.4;'>
+              Auto: <span id='spAuto'>${appState.setpoints[0].toFixed(1)}°${appState.tempUnit}</span><br>
+              Manual: <span id='spManual'>${appState.setpoints[1].toFixed(1)}°${appState.tempUnit}</span><br>
+              U1: <span id='spU1'>${appState.setpoints[2].toFixed(1)}°${appState.tempUnit}</span><br>
+              U2: <span id='spU2'>${appState.setpoints[3].toFixed(1)}°${appState.tempUnit}</span>
+            </div>
+          </div>
+          <label>Default Setpoint: <span id="defSpVal">${defaultSetpointDisplay.toFixed(1)}°${appState.tempUnit}</span></label>
+          <div class="slider-row"><input type="range" min="30" max="315" step="0.5" value="${appState.defaultSetpoint}" id="defaultSetpointSlider"></div>
+          <button class="tab-btn" id="saveDefaultSp">Save Default Setpoint</button>
+          <label>Temperature Units</label>
+          <div style="display:flex;gap:10px;margin-bottom:10px;">
+            <button class="tab-btn" id="unitC" ${appState.tempUnit === 'C' ? 'style=\"background:#007aff;color:#fff;border-color:#007aff\"' : ''}>°C</button>
+            <button class="tab-btn" id="unitF" ${appState.tempUnit === 'F' ? 'style=\"background:#007aff;color:#fff;border-color:#007aff\"' : ''}>°F</button>
+          </div>
+          <label>Bluetooth Settings</label>
+          <div style="display:flex;gap:10px;margin-bottom:10px;">
+            <button class="tab-btn" id="disconnectBtnConfig">Disconnect</button>
+            <button class="tab-btn" id="forgetBtn">Forget Device</button>
+          </div>
+          <label>Graph Configuration</label>
+          <div style="display:flex;align-items:center;justify-content:center;margin-bottom:12px;gap:18px;">
+            <button class="tab-btn" id="toggleGraphBtn" style="margin-bottom:8px;">Show/Hide Temp/Setpoint Graph</button>
+            <button id="refreshGraphBtn" title="Refresh Graph" style="margin-left:8px;padding:2px 6px;font-size:13px;border-radius:4px;border:1px solid #ccc;background:#f7f7f7;cursor:pointer;display:flex;align-items:center;gap:2px;">
+              <svg width="14" height="14" viewBox="0 0 20 20" style="vertical-align:middle;"><path d="M10 3v2a5 5 0 1 1-4.546 2.916" fill="none" stroke="#007aff" stroke-width="2"/><polyline points="7 8 5 7 6 5" fill="none" stroke="#007aff" stroke-width="2"/></svg>
+            </button>
+            <button class="tab-btn" id="resetAllPidsBtn" style="margin-left:8px;">Reset All PIDs</button>
+          </div>`;
+      }
+      document.getElementById('tabContent').innerHTML = html;
+      attachTabEvents();
+      updateStatus();
+    }
+
+    let lastGraphUpdate = 0;
+    const GRAPH_UPDATE_MS = 250; // minimum ms between graph renders
+
+    function drawGraph(ts) {
+      if (!ts) ts = performance.now();
+      if (ts - lastGraphUpdate < GRAPH_UPDATE_MS) {
+        requestAnimationFrame(drawGraph);
+        return;
+      }
+      lastGraphUpdate = ts;
+      let tempDisplay = appState.tempUnit === 'C' ? temp : (temp * 9/5 + 32);
+      let setpointDisplay = appState.tempUnit === 'C' ? appState.setpoints[mode] : (appState.setpoints[mode] * 9/5 + 32);
+      window.mainTempHistory.push(tempDisplay); window.mainTempHistory.shift();
+      window.mainSetpointHistory.push(setpointDisplay); window.mainSetpointHistory.shift();
+      // Use manualOutput for manual mode graph
+      if (mode === 1) {
+        window.mainOutputHistory.push(appState.manualOutput); window.mainOutputHistory.shift();
+      } else {
+        window.mainOutputHistory.push(output); window.mainOutputHistory.shift();
+      }
+      // Only draw if graph is visible
+      const graphDiv = document.getElementById('mainGraphContainer');
+      if (!graphDiv || graphDiv.style.display === 'none') {
+        requestAnimationFrame(drawGraph);
+        return;
+      }
+      // Update legend and label outside canvas
+      let graphMode = mode === 1 ? 'manual' : 'default';
+      const labelMode = document.getElementById('graphLabelMode');
+      const legendLabel1 = document.getElementById('legendLabel1');
+      const legendLabel2 = document.getElementById('legendLabel2');
+      if (labelMode && legendLabel1 && legendLabel2) {
+        if (graphMode === 'manual') {
+          labelMode.textContent = 'Output %';
+          legendLabel1.textContent = 'Output %';
+          legendLabel2.textContent = 'Temp';
+        } else {
+          labelMode.textContent = 'Setpoint';
+          legendLabel1.textContent = 'Setpoint';
+          legendLabel2.textContent = 'Temp';
+        }
+      }
+      const canvas = document.getElementById('mainTempGraph');
+      if (!canvas) {
+        requestAnimationFrame(drawGraph);
+        return;
+      }
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      // Axes
+      ctx.strokeStyle = '#ccc';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(32,8); ctx.lineTo(32,72); ctx.lineTo(310,72); ctx.stroke();
+      // Axis labels only
+      ctx.fillStyle = '#8e8e93';
+      ctx.font = '12px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial, sans-serif';
+      ctx.fillText('Time', 270, 78);
+      // Data range (auto scale)
+      let minY, maxY;
+      if (graphMode === 'manual') {
+        minY = Math.min(...window.mainTempHistory, ...window.mainOutputHistory);
+        maxY = Math.max(...window.mainTempHistory, ...window.mainOutputHistory);
+      } else {
+        minY = Math.min(...window.mainTempHistory, ...window.mainSetpointHistory);
+        maxY = Math.max(...window.mainTempHistory, ...window.mainSetpointHistory);
+      }
+      let margin = Math.max(2, (maxY-minY)*0.08);
+      minY -= margin;
+      maxY += margin;
+      if (maxY-minY < 1) { minY -= 0.5; maxY += 0.5; }
+      // Draw lines
+      if (graphMode === 'manual') {
+        // Output line
+        ctx.strokeStyle = '#007aff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i=0; i<window.mainOutputHistory.length; ++i) {
+          let x = 32 + (i* (278/59));
+          let y = 72 - ((window.mainOutputHistory[i]-minY)/(maxY-minY))*64;
+          if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+        // Temp line
+        ctx.strokeStyle = '#ff9500';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i=0; i<window.mainTempHistory.length; ++i) {
+          let x = 32 + (i* (278/59));
+          let y = 72 - ((window.mainTempHistory[i]-minY)/(maxY-minY))*64;
+          if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+      } else {
+        // Setpoint line
+        ctx.strokeStyle = '#007aff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i=0; i<window.mainSetpointHistory.length; ++i) {
+          let x = 32 + (i* (278/59));
+          let y = 72 - ((window.mainSetpointHistory[i]-minY)/(maxY-minY))*64;
+          if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+        // Temp line
+        ctx.strokeStyle = '#ff9500';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i=0; i<window.mainTempHistory.length; ++i) {
+          let x = 32 + (i* (278/59));
+          let y = 72 - ((window.mainTempHistory[i]-minY)/(maxY-minY))*64;
+          if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+      }
+      requestAnimationFrame(drawGraph);
+    }
+
+    function attachTabEvents() {
+                  // Add Reset to Default PID button logic
+                  if (document.getElementById('resetPIDBtn')) {
+                    document.getElementById('resetPIDBtn').onclick = function() {
+                      // Reset only the PID inputs visible on the current page/tab
+                      const kpEl = document.getElementById('kpInput');
+                      const kiEl = document.getElementById('kiInput');
+                      const kdEl = document.getElementById('kdInput');
+                      if (kpEl) kpEl.value = 10.0;
+                      if (kiEl) kiEl.value = 0.5;
+                      if (kdEl) kdEl.value = 50.0;
+                      // Also save these defaults into the current mode's PID config and persist
+                      if (typeof mode === 'number' && Array.isArray(appState.pidTunings)) {
+                        appState.pidTunings[mode] = { kp: 10.0, ki: 0.5, kd: 50.0 };
+                        saveConfigState();
+                      }
+                      // Update any visible status/UI
+                      updateStatus();
+                    };
+                  }
+            // Add Enter key support to all text inputs
+            document.querySelectorAll('input[type="text"]').forEach(input => {
+              input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                  this.blur();
+                }
+              });
+              // Add a visible enter key if not on mobile
+              if (!/Mobi|Android/i.test(navigator.userAgent)) {
+                input.setAttribute('enterkeyhint', 'enter');
+              }
+            });
+      // Toggleable graph for main UI
+      if (document.getElementById('toggleGraphBtn')) {
+        document.getElementById('toggleGraphBtn').onclick = function() {
+          const graphDiv = document.getElementById('mainGraphContainer');
+          if (graphDiv.style.display === 'none') {
+            graphDiv.style.display = '';
+            this.textContent = 'Hide Temp/Setpoint Graph';
+          } else {
+            graphDiv.style.display = 'none';
+            this.textContent = 'Show Temp/Setpoint Graph';
+          }
+        };
+      }
+      // Graph rendering for main UI
+      if (document.getElementById('mainTempGraph')) {
+        // Manual refresh button for graph
+        const refreshGraphBtn = document.getElementById('refreshGraphBtn');
+        if (refreshGraphBtn) {
+          refreshGraphBtn.onclick = function() {
+            drawGraph();
+          };
+        }
+        // Also handle refresh from legend button
+        const refreshGraphBtnLegend = document.getElementById('refreshGraphBtnLegend');
+        if (refreshGraphBtnLegend) {
+          refreshGraphBtnLegend.onclick = function() {
+            // Reset graph history arrays to current values
+            window.mainTempHistory = Array(60).fill(temp);
+            window.mainSetpointHistory = Array(60).fill(appState.setpoints[mode]);
+            window.mainOutputHistory = Array(60).fill(appState.manualOutput);
+            drawGraph();
+          };
+        }
+        drawGraph();
+      }
+                    // PID info toggles
+                    if (document.getElementById('togglePidInfoAuto')) {
+                      document.getElementById('togglePidInfoAuto').onclick = function() {
+                        const info = document.getElementById('pidInfoAuto');
+                        if (info.style.display === 'none') {
+                          info.style.display = '';
+                          this.textContent = 'Hide PID Info';
+                        } else {
+                          info.style.display = 'none';
+                          this.textContent = 'Show PID Info';
+                        }
+                      };
+                    }
+                    if (document.getElementById('togglePidInfoU2')) {
+                      document.getElementById('togglePidInfoU2').onclick = function() {
+                        const info = document.getElementById('pidInfoU2');
+                        if (info.style.display === 'none') {
+                          info.style.display = '';
+                          this.textContent = 'Hide PID Info';
+                        } else {
+                          info.style.display = 'none';
+                          this.textContent = 'Show PID Info';
+                        }
+                      };
+                    }
+                    if (document.getElementById('togglePidInfoU3')) {
+                      document.getElementById('togglePidInfoU3').onclick = function() {
+                        const info = document.getElementById('pidInfoU3');
+                        if (info.style.display === 'none') {
+                          info.style.display = '';
+                          this.textContent = 'Hide PID Info';
+                        } else {
+                          info.style.display = 'none';
+                          this.textContent = 'Show PID Info';
+                        }
+                      };
+                    }
+              if (document.getElementById('saveConfigBtn')) {
+                document.getElementById('saveConfigBtn').onclick = () => {
+                      // Save PID values
+                      const kp = parseFloat(document.getElementById('kpInput').value);
+                      const ki = parseFloat(document.getElementById('kiInput').value);
+                      const kd = parseFloat(document.getElementById('kdInput').value);
+                      appState.pidTunings[mode] = { kp, ki, kd };
+                      // Save setpoint value for current mode
+                      if (document.getElementById('setpointSlider')) {
+                        appState.setpoints[mode] = parseFloat(document.getElementById('setpointSlider').value);
+                      }
+                      saveConfigState();
+                      alert(`Config saved!\nKp: ${kp}\nKi: ${ki}\nKd: ${kd}\nSetpoint: ${appState.setpoints[mode]}`);
+                };
+              }
+            if (document.getElementById('unitC')) {
+              document.getElementById('unitC').onclick = () => {
+                appState.tempUnit = 'C';
+                showTab(4);
+                updateStatus();
+              };
+            }
+            if (document.getElementById('unitF')) {
+              document.getElementById('unitF').onclick = () => {
+                appState.tempUnit = 'F';
+                showTab(4);
+                updateStatus();
+              };
+            }
+      if (document.getElementById('setpointSlider')) {
+        document.getElementById('setpointSlider').addEventListener('input', e => {
+          appState.setpoints[mode] = parseFloat(e.target.value);
+          let setpointDisplay = appState.tempUnit === 'C' ? appState.setpoints[mode] : (appState.setpoints[mode] * 9/5 + 32);
+          document.getElementById('spVal').textContent = setpointDisplay.toFixed(1) + '°' + appState.tempUnit;
+          updateStatus();
+        });
+      }
+      if (document.getElementById('manualOutputSlider')) {
+        document.getElementById('manualOutputSlider').addEventListener('input', e => {
+          appState.manualOutput = parseInt(e.target.value);
+          document.getElementById('manOutVal').textContent = appState.manualOutput + '%';
+          updateStatus();
+        });
+      }
+
+      if (document.getElementById('defaultSetpointSlider')) {
+        document.getElementById('defaultSetpointSlider').addEventListener('input', e => {
+          appState.defaultSetpoint = parseFloat(e.target.value);
+          let defaultSetpointDisplay = appState.tempUnit === 'C' ? appState.defaultSetpoint : (appState.defaultSetpoint * 9/5 + 32);
+          document.getElementById('defSpVal').textContent = defaultSetpointDisplay.toFixed(1) + '°' + appState.tempUnit;
+          updateStatus();
+        });
+      }
+      if (document.getElementById('saveDefaultSp')) {
+        document.getElementById('saveDefaultSp').onclick = () => {
+          alert('Default setpoint saved!');
+        };
+      }
+      // Reset All PIDs handler (Config tab)
+      if (document.getElementById('resetAllPidsBtn')) {
+        document.getElementById('resetAllPidsBtn').onclick = () => {
+          const def = { kp: 10.0, ki: 0.5, kd: 50.0 };
+          for (let i = 0; i < appState.pidTunings.length; ++i) {
+            appState.pidTunings[i] = { ...def };
+          }
+          saveConfigState();
+          alert('All PID tunings have been reset to defaults.');
+          updateStatus();
+        };
+      }
+      if (document.getElementById('updatePID')) {
+        document.getElementById('updatePID').onclick = () => {
+          const idx = mode;
+          appState.pidTunings[idx] = {
+            kp: parseFloat(document.getElementById('kpInput').value),
+            ki: parseFloat(document.getElementById('kiInput').value),
+            kd: parseFloat(document.getElementById('kdInput').value)
+          };
+          saveConfigState();
+          alert(`PID config saved for mode ${['Auto','Manual','U1','U2','Config'][idx]}!\nKp: ${appState.pidTunings[idx].kp}\nKi: ${appState.pidTunings[idx].ki}\nKd: ${appState.pidTunings[idx].kd}`);
+        };
+      }
+      if (document.getElementById('disconnectBtnConfig')) {
+        document.getElementById('disconnectBtnConfig').onclick = () => {
+          document.getElementById('connectBtn').style.display = '';
+          document.getElementById('disconnectBtn').style.display = 'none';
+          alert('Disconnected from device!');
+        };
+      }
+      if (document.getElementById('forgetBtn')) {
+        document.getElementById('forgetBtn').onclick = () => {
+          document.getElementById('connectBtn').style.display = '';
+          document.getElementById('disconnectBtn').style.display = 'none';
+          alert('Device forgotten!');
+        };
+      }
+    }
+
+    document.getElementById('powerToggle').onclick = () => {
+      powerOn = !powerOn;
+      updateStatus();
+    };
+    document.getElementById('tabAuto').onclick = () => showTab(0);
+    document.getElementById('tabManual').onclick = () => showTab(1);
+    document.getElementById('tabU1').onclick = () => showTab(2);
+    document.getElementById('tabU2').onclick = () => showTab(3);
+    document.getElementById('tabConfig').onclick = () => showTab(4);
+    document.getElementById('connectBtn').onclick = () => {
+      document.getElementById('connectBtn').style.display = 'none';
+      document.getElementById('disconnectBtn').style.display = '';
+      document.getElementById('connectionStatusText').style.display = '';
+      alert('Connected! (mock)');
+    };
+    document.getElementById('disconnectBtn').onclick = () => {
+      document.getElementById('connectBtn').style.display = '';
+      document.getElementById('disconnectBtn').style.display = 'none';
+      document.getElementById('connectionStatusText').style.display = 'none';
+      alert('Disconnected! (mock)');
+    };
+
+    // Initial render
+    showTab(0);
+    updateStatus();
+    // ...existing code...
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+Reference,Qty,Description,DigiKey Search Term,Footprint,Notes
+D1,1,Zener diode, 3.6 V clamp, low-power (use to clamp around ~3.6 V),"BZT52 3.6V Zener SOD-123|BZT52H-B3V6","SOD-123 / SOD-323","Low-cost clamp to ~3.6V for small transients. Good when you specifically want ~3.6V clamp. Check power rating (250–500 mW) and leakage."
+D2,1,Schottky diode for 3.3V-rail clamp (series-resistor method),"BAT54 Schottky SOD-323|SS14 Schottky SMA","SOD-323 / SMA","Use with Rseries to clamp midpoint to 3.3V rail. Preferred when you already have a solid 3.3V rail. Use BAT54 for small currents, SS14 for higher current."
+Rseries,1,Series resistor for clamp path,2.2k 1/4W resistor,"Resistor 2.2k 1/4W 0805|2.2k 1/4W thru-hole","0805 (SMD) or axial","Place between BAT_ADC node and MCU pin (or between BAT_ADC node and clamp diode) to limit clamp current. Use value 1k–10k depending on divider impedance and ADC sample cap."
+TVS1,1,Unidirectional TVS diode for transient suppression (protects from spikes),"SMBJ3.3A|SMBJ3.3CA TVS unidirectional","DO-214AA (SMA/SMBJ)","For large transients/clamps: choose TVS rated for working standoff and expected surge. Note: TVS clamp voltage is usually higher than zener knee; verify clamp vs battery level."
+C1,1,Decoupling capacitor at BAT_ADC,10 nF ceramic X7R 50V,"Capacitor 10nF 50V 0805|10nF 16V 0603","0805 / 0603","Small cap from BAT_ADC to GND to stabilize ADC sampling with high-value divider. 10–100 nF recommended."
+
+Q2,1,N-channel MOSFET RLB8721PBF (TO-220),"RLB8721PBF TO-220|N-channel MOSFET TO-220","TO-220","Documented MOSFET for heater: RLB8721PBF (TO-220). IMPORTANT: verify Rds(on) at VGS=3.3V in the datasheet; board currently drives gate from MCU (3.3V). If Rds(on) is high at 3.3V, use a logic-level MOSFET or add a gate driver."
+
+# Alternate MOSFET search hints (pick one and I can fetch exact SKUs)
+ALT_MOSFET_SMD,1,Alternate SMD MOSFET,Logic-level SMD MOSFET candidates,"MOSFET Rds(on)<=0.02 ohm Vgs<=4.5V SMD|Rds(on) @ 4V <= 20mOhm","SMD (DPAK/SO-8)","Search for low Rds(on) SMD parts with explicit low-Vgs characterization. Good for compact boards with thermal vias."
+ALT_MOSFET_TO220,1,Alternate TO-220 MOSFET,TO-220 logic-level MOSFET candidates,"MOSFET TO-220 Rds(on)<=0.02 ohm Vgs<=4.5V|TO-220 30V logic-level","TO-220","Use TO-220 for easy heatsink mounting and prototyping. Verify mechanical clearance."
+
+# Note: If you want exact DigiKey SKUs (with price and qty), say 'fetch live parts' and I will query DigiKey with these search terms and add exact matches to this BOM.
+
+# Notes:
+# - The "DigiKey Search Term" column contains keywords to paste into DigiKey's search box; I didn't include exact part numbers so you can pick package/rating preferred for your assembly (SMD vs THT, power rating, leakage, etc.).
+# - If you want, I can fetch live DigiKey part numbers for these items (US DigiKey) and produce a CSV with exact DigiKey SKUs, prices, and datasheet links — say "fetch live parts" and I'll query DigiKey for each search term.
+# - Placement guidance: for zener or TVS put the diode from BAT_ADC node to GND (cathode to node for unidirectional). For series-resistor + Schottky method, place Rseries between BAT_ADC and MCU, then Schottky from MCU side to 3.3V rail (cathode to 3.3V). Ensure correct polarity and check clamp thresholds.

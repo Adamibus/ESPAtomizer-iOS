@@ -1,0 +1,23 @@
+%TF.GenerationSoftware,KiCad,Pcbnew,9.0.6*%
+%TF.CreationDate,2025-12-28T14:18:18-05:00*%
+%TF.ProjectId,EspAtomizer-PCB_v3,45737041-746f-46d6-997a-65722d504342,rev?*%
+%TF.SameCoordinates,Original*%
+%TF.FileFunction,Profile,NP*%
+%FSLAX46Y46*%
+G04 Gerber Fmt 4.6, Leading zero omitted, Abs format (unit mm)*
+G04 Created by KiCad (PCBNEW 9.0.6) date 2025-12-28 14:18:18*
+%MOMM*%
+%LPD*%
+G01*
+G04 APERTURE LIST*
+%TA.AperFunction,Profile*%
+%ADD10C,0.050000*%
+%TD*%
+G04 APERTURE END LIST*
+D10*
+X135411625Y-74000000D02*
+X164661625Y-74000000D01*
+X164661625Y-117250000D01*
+X135411625Y-117250000D01*
+X135411625Y-74000000D01*
+M02*

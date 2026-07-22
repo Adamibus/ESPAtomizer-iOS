@@ -1,0 +1,7 @@
+; SYMBOL MOVED
+; This symbol was moved to the v3 library to keep v1 unchanged.
+; New location:
+; hardware/ESPAtomizer_PCB_v3/lib/symbols/AD8495.kicad_sym
+
+; Keep your schematic symbol's Footprint property pointed to the v3 footprint.
+

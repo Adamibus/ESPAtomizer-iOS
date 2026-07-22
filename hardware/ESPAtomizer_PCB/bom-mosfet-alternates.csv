@@ -1,0 +1,10 @@
+Reference,Qty,Category,Description,DigiKey Search Term,Footprint,Notes
+ALT1,1,Preferred SMD candidates,Logic-level SMD MOSFET candidates (pick parts with Rds(on) specified at <=4.5V or characterized at 2.5–3.3V),"MOSFET Rds(on) <= 0.020 ohm Vgs<=4.5V SMD|Rds(on) @ 4V <= 20mOhm","SMD (DPAK, SO-8, or LFPAK)","Use when you want compact PCB assembly and plan thermal vias + heavy copper. Prioritize parts with explicit Rds(on) at 2.5–4V in the datasheet."
+ALT2,1,Preferred TO-220 candidates,TO-220 MOSFET candidates (through-hole, easy heatsink attach),"MOSFET TO-220 Rds(on)<=0.02 ohm Vgs<=4.5V|TO-220 30V logic-level","TO-220","Good for prototypes or when adding a small heatsink; check Rds(on) at low Vgs and mechanical clearance."
+ALT3,1,Recommended families,Families & filters to prefer when searching for 3.3V-capable MOSFETs,"Infineon OptiMOS|Vishay SiR|Nexperia PSMN|Alpha & Omega AON|ON Semiconductor" ,"various","These families have many low-Rds(on) parts; filter by 'Rds(on) @ 4V' or 'Rds(on) @ 2.5V' when possible.">
+ALT4,1,Action,Request live DigiKey SKUs (optional),"(leave blank)","(n/a)","If you want exact DigiKey SKUs, say 'fetch live parts' and I will query DigiKey and add exact SKUs, qty/package, and links to the BOM."
+
+# Guidance:
+# - Many MOSFETs are characterized at Vgs=10V and Vgs=4.5V only; datasheets rarely publish Rds(on) at 3.3V. Prefer parts that publish Rds(on) at 2.5–4V or show transfer curves so you can interpolate.
+# - If you need guaranteed low Rds(on) at 3.3V, look for parts explicitly specified for logic-level drive or 'Rds(on) @ 2.5V' in datasheet.
+# - When choosing SMD parts, plan thermal vias and at least 2–4oz copper/pour under the MOSFET; for TO-220 consider a small heatsink or direct PCB copper connection to the tab.

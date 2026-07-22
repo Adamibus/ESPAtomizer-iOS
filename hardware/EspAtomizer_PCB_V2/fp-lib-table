@@ -1,0 +1,5 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "ESP32-C6-MINI-1-N4")(type "KiCad")(uri "C:/Users/adinj/OneDrive/Projects/ESP32-C6-MINI-1-N4")(options "")(descr ""))
+  (lib (name "ESPAtomizer")(type "KiCad")(uri "${KIPRJMOD}/kicad/footprints/ESPAtomizer.pretty")(options "")(descr ""))
+)
