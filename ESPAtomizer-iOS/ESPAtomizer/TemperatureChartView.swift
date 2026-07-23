@@ -22,7 +22,11 @@ struct TemperatureChartView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if viewModel.showTemperatureChart {
+                // The plot sits in a RECESSED well — the scope screen set into
+                // the faceplate. The swatch picker stays OUTSIDE the glass,
+                // like the physical buttons under a scope's display.
                 ChartsImpl(viewModel: viewModel, chartRefreshTrigger: chartRefreshTrigger)
+                    .well(pad: 10)
             }
             // OUTSIDE the if: the swatch colors far more than the chart line
             // (power toggle, target stat, sliders), so hiding the chart must
@@ -182,7 +186,7 @@ private struct ChartsImpl: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 4) {
             // Live temperature is the hero, in whichever brand color is selected.
             // The target rides underneath in muted cream — deliberately NOT a
             // palette color, so it can never collide with the user's choice.
@@ -196,6 +200,26 @@ private struct ChartsImpl: View {
             // its old color. The scale is the supported way to drive series color
             // from a variable, and it re-renders when seriesColor changes.
             Chart {
+                // Output duty cycle rides INSIDE the plot, along the floor — the
+                // way a scope shows a second trace on one screen. It used to be
+                // a separate 20pt strip below the x axis, which read as dead
+                // black space whenever there was no data (i.e. most of the time
+                // you're looking at an empty chart). Drawn FIRST so both
+                // temperature lines pass over it.
+                ForEach(viewModel.history) { dp in
+                    AreaMark(
+                        x: .value("Time", dp.time),
+                        yStart: .value("Base", yDomain.lowerBound),
+                        yEnd: .value("OutPct", outputY(dp.outputPct))
+                    )
+                    .foregroundStyle(
+                        .linearGradient(
+                            Gradient(colors: [Theme.rose.opacity(0.45), Theme.rose.opacity(0.05)]),
+                            startPoint: .top, endPoint: .bottom
+                        )
+                    )
+                    .interpolationMethod(.linear)
+                }
                 ForEach(setpointSegments) { seg in
                     ForEach(seg.points) { p in
                         LineMark(
@@ -260,7 +284,7 @@ private struct ChartsImpl: View {
                     AxisValueLabel(collisionResolution: .disabled) {
                         if let d = value.as(Date.self) {
                             Text(relativeLabel(for: d))
-                                .font(.caption2)
+                                .font(.system(.caption2, design: .monospaced))
                                 .foregroundColor(Theme.textDim)
                         }
                     }
@@ -272,10 +296,14 @@ private struct ChartsImpl: View {
                     AxisGridLine().foregroundStyle(Theme.hairline)
                     AxisValueLabel()
                         .foregroundStyle(Theme.textDim)
-                        .font(.caption2)
+                        .font(.system(.caption2, design: .monospaced))
                 }
             }
             .chartYScale(domain: yDomain)
+            // Sized so the y gridlines get air without the well dominating the
+            // page (185 was too tall). The output strip lives inside the plot,
+            // so this is the whole well: it fills right down to the x-axis
+            // labels — no dead band under them.
             .frame(height: 160)
             // Temperature only exists while the device is notifying. Without this,
             // a disconnected app draws just the cream setpoint line and looks like
@@ -283,42 +311,26 @@ private struct ChartsImpl: View {
             // it read. Say plainly that there is no temperature to draw.
             .overlay {
                 if tempSegments.isEmpty {
-                    Text(viewModel.isConnected ? "Waiting for temperature…" : "Not connected")
-                        .font(.caption)
+                    // Terminal voice, matching the status line at the bottom of
+                    // the home page ("NO LINK" there means this here).
+                    Text(viewModel.isConnected ? "AWAITING DATA…" : "NO LINK")
+                        .font(.system(.caption, design: .monospaced))
+                        .kerning(1.0)
                         .foregroundColor(Theme.textDim)
                 }
             }
 
-            // Output strip under the main plot — rose, its own identity. NOT tied
-            // to Theme.ok: status is now bright-vs-dim cream, which would wash the
-            // strip out against the gray temperature line.
-            // Not tied to the swatch: it shows duty cycle, a different quantity
-            // from temperature. Fixed 0–100% scale: the strip's height IS the
-            // duty cycle, honestly.
-            Chart {
-                ForEach(viewModel.history) { dp in
-                    AreaMark(
-                        x: .value("Time", dp.time),
-                        y: .value("OutPct", dp.outputPct)
-                    )
-                    .foregroundStyle(
-                        .linearGradient(
-                            Gradient(colors: [Theme.rose.opacity(0.45), Theme.rose.opacity(0.05)]),
-                            startPoint: .top, endPoint: .bottom
-                        )
-                    )
-                    .interpolationMethod(.linear)
-                }
-            }
-            .chartXAxis(.hidden)
-            .chartYAxis(.hidden)
-            // Same X window as the plot above. The strip's axis is hidden, so if
-            // this drifts it fails silently: the strip would still look plausible
-            // while showing a different span of time than the line it sits under.
-            .chartXScale(domain: xDomain)
-            .chartYScale(domain: 0...100)
-            .frame(height: 32)
         }
+    }
+
+    // Duty cycle mapped into the bottom QUARTER of the temperature scale, in
+    // whichever unit is displayed. Rose, its own identity — not the swatch and
+    // not Theme.ok: it's a different quantity from temperature, sharing the
+    // screen the way a scope's second channel does. 100% duty = 1/4 plot
+    // height; the shape over time is what matters, not its absolute y.
+    private func outputY(_ pct: Double) -> Double {
+        let lo = yDomain.lowerBound, hi = yDomain.upperBound
+        return lo + (min(max(pct, 0), 100) / 100.0) * 0.25 * (hi - lo)
     }
 
     // MARK: X axis (rolling window)

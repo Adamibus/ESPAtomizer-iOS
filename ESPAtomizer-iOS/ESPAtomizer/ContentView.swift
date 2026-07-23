@@ -28,18 +28,16 @@ import CoreBluetooth
 // Search the project for "🎨 UI-CUSTOMIZE" (Cmd-Shift-F in Xcode) to jump between them.
 // See README.md ("UI Customization Guide") for a plain-English walkthrough of each one.
 //
-// The three highest-impact changes:
+// The current look is the FACEPLATE: one continuous dark surface, like the
+// front panel of a bench power supply — zones separated by hairline rules and
+// etched monospaced labels (RuleLabel), depth reserved for recessed wells
+// (`.well()`: the temperature readout, the chart bed). There are deliberately
+// NO cards: the rounded-panel-on-dark-background pattern is what made the app
+// read as template/AI-generated. If restyling, the three highest-impact spots:
 //   1. BRAND NAME + TITLE ....... AtomizerViewModel.swift  →  `appTitle` / `appName`
-//   2. ACCENT COLOR ............. replace the many hard-coded `.blue` / `.green` /
-//                                 `.orange` / `.red` calls with a single shared color.
-//                                 Define one below in `Theme` and use `Theme.accent`.
-//   3. CARD LOOK ................ the `.background(Theme.card)` +
-//                                 `.cornerRadius(...)` pattern repeated on every panel.
-//
-// Tip: SwiftUI's stock look comes from (a) system fonts like `.largeTitle`/`.title2`,
-// (b) system colors like `.systemGray6`, and (c) sharp default corners. Change those
-// three things (custom font, a brand palette, softer shadows/corners) and the app
-// immediately stops looking like a template.
+//   2. ACCENT COLOR ............. `Theme.accent` below.
+//   3. PANEL STRUCTURE .......... FaceplateRule / RuleLabel / `.well()` — the
+//                                 three primitives every zone is built from.
 //
 // One place for every color, size and spacing value in the app.
 // Change a ROLE (accent/card/bg/ok…) to restyle globally; the raw palette below
@@ -98,10 +96,15 @@ enum Theme {
     }
 
     // MARK: Roles — change these to restyle the whole app
+    // FACEPLATE look: the screen is ONE continuous surface, like the front
+    // panel of a bench power supply — no floating cards. Structure comes from
+    // hairline rules + etched uppercase labels; depth comes from RECESSED
+    // wells (readout window, chart bed, entry fields) and the occasional
+    // RAISED key (selected mode segment, list rows).
     static let accent   = gold           // small highlights + primary actions ONLY, never large text
-    static let bg       = charcoalDeep   // screen background
-    static let card     = charcoalLift   // panel background
-    static let inset    = charcoalDeep   // wells inside a card: fields, segmented track
+    static let bg       = charcoal       // the faceplate surface
+    static let card     = charcoalLift   // raised key: selected segment, device-list rows
+    static let inset    = charcoalDeep   // recessed wells: readout, chart bed, fields, tracks
     static let text     = cream
     static let textDim  = creamMuted
     // Connected / power on / healthy. Deliberately NOT a hue: status reads as
@@ -113,8 +116,10 @@ enum Theme {
     static let hairline = cream.opacity(0.12)
 
     // MARK: Shape
-    static let corner: CGFloat = 14
-    static let cornerSm: CGFloat = 9      // fields, segments, small chips
+    // Machined, not friendly: corners eased just enough to not glint. Soft
+    // radii are the single biggest "template app" tell — keep these tight.
+    static let corner: CGFloat = 3
+    static let cornerSm: CGFloat = 2      // fields, segments, small chips
 
     // MARK: Spacing scale — use these instead of ad-hoc numbers
     static let sBlock: CGFloat = 20   // between major sections
@@ -126,33 +131,38 @@ enum Theme {
 }
 
 // MARK: - Type scale. Use these, never ad-hoc fonts, so the app reads as one voice.
+// Labels and values are MONOSPACED throughout — silk-screened lettering on test
+// gear, terminal readouts. This is most of the personality; don't dilute it
+// with rounded or default-sans numbers.
 extension Text {
-    /// SECTION HEADER — quiet uppercase label, like iOS Settings group headers.
+    /// SECTION HEADER — etched uppercase label, like the silk-screen on a scope.
     func sectionHeader() -> some View {
-        self.font(.caption).fontWeight(.semibold)
+        self.font(.system(.caption, design: .monospaced)).fontWeight(.semibold)
             .textCase(.uppercase).kerning(1.1)
             .foregroundColor(Theme.textDim)
     }
-    /// STAT LABEL — small label above a value.
+    /// STAT LABEL — small etched label above a value.
     func statLabel() -> some View {
-        self.font(.caption2).fontWeight(.medium)
+        self.font(.system(.caption2, design: .monospaced)).fontWeight(.medium)
             .textCase(.uppercase).kerning(0.8)
             .foregroundColor(Theme.textDim)
     }
-    /// STAT VALUE — number that updates live; monospaced digits so it doesn't jitter.
+    /// STAT VALUE — live number. Monospaced face (not just digits) so it reads
+    /// as an instrument readout and never jitters.
     func statValue(_ color: Color = Theme.text) -> some View {
-        self.font(.system(.title3, design: .rounded).weight(.semibold))
-            .monospacedDigit()
+        self.font(.system(.title3, design: .monospaced).weight(.semibold))
             .foregroundColor(color)
     }
 }
 
 // MARK: - Button styles. Two, used everywhere: one filled primary, one quiet ghost.
+// Sharp-cornered, monospaced, uppercase — panel keys, not iOS pills.
 struct PrimaryButtonStyle: ButtonStyle {
     var tint: Color = Theme.accent
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.subheadline.weight(.semibold))
+            .font(.system(.footnote, design: .monospaced).weight(.semibold))
+            .textCase(.uppercase)
             .foregroundColor(Theme.charcoalDeep)
             .padding(.vertical, 10).padding(.horizontal, 16)
             .background(tint.opacity(configuration.isPressed ? 0.75 : 1))
@@ -163,7 +173,8 @@ struct GhostButtonStyle: ButtonStyle {
     var tint: Color = Theme.text
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.subheadline.weight(.medium))
+            .font(.system(.footnote, design: .monospaced).weight(.medium))
+            .textCase(.uppercase)
             .foregroundColor(configuration.isPressed ? tint.opacity(0.5) : tint)
             .padding(.vertical, 10).padding(.horizontal, 16)
             .background(
@@ -184,13 +195,13 @@ fileprivate struct NumberField: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(.subheadline)
+                .font(.system(.subheadline, design: .monospaced))
                 .foregroundColor(Theme.textDim)
             Spacer()
             TextField("", text: $text)
                 .keyboardType(.decimalPad)
                 .multilineTextAlignment(.trailing)
-                .font(.body.monospacedDigit())
+                .font(.system(.body, design: .monospaced))
                 .foregroundColor(Theme.text)
                 .padding(.vertical, 7).padding(.horizontal, 10)
                 .frame(width: width)
@@ -200,20 +211,44 @@ fileprivate struct NumberField: View {
     }
 }
 
-// Every panel in this app is padding + background + corner + shadow.
-// Defined once so the cards can't drift apart again.
+// FACEPLATE primitives. There are no cards: content sits flat on the one
+// continuous surface, and these three things do all the structural work.
+
+/// A full-width engraved hairline — the rule between zones of the panel.
+struct FaceplateRule: View {
+    var body: some View {
+        Rectangle().fill(Theme.hairline).frame(height: 1)
+    }
+}
+
+/// Etched zone label with the rule running off to the right edge:
+///   TARGET ─────────────────────
+/// This replaces what used to be a card boundary.
+struct RuleLabel: View {
+    let label: String
+    init(_ label: String) { self.label = label }
+    var body: some View {
+        HStack(spacing: Theme.sRow) {
+            Text(label).sectionHeader()
+                .fixedSize()
+            FaceplateRule()
+        }
+    }
+}
+
+/// A RECESSED well — the readout window and the chart bed. The one place the
+/// faceplate is allowed depth: a dark inset pane behind glass.
 extension View {
-    func card() -> some View {
+    func well(pad: CGFloat = Theme.pad) -> some View {
         self
-            .padding(Theme.pad)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.card)
+            .padding(pad)
+            .frame(maxWidth: .infinity)
+            .background(Theme.inset)
             .cornerRadius(Theme.corner)
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.corner)
                     .stroke(Theme.hairline, lineWidth: 1)
             )
-            .shadow(color: .black.opacity(0.25), radius: 8, y: 3)
     }
 }
 
@@ -304,13 +339,21 @@ struct ContentView: View {
                         showSettings = true
                     }
                     StatusPanelView(viewModel: viewModel)
-                    
-                    // Controls and Tabs
+
+                    // Rule between the readout cluster and the control zone —
+                    // this line is what the card boundary used to be.
+                    FaceplateRule()
+
+                    // Controls and Tabs — flat on the faceplate, no panel chrome.
                     VStack(alignment: .leading, spacing: Theme.sCard) {
                         // Power — the most important control, first and unmissable.
                         Toggle(isOn: $viewModel.powerToggle) {
+                            // Etched like every other faceplate label — the stock
+                            // sans here read as a different app than the rest.
                             Text("Power")
-                                .font(.body.weight(.semibold))
+                                .font(.system(.callout, design: .monospaced).weight(.semibold))
+                                .textCase(.uppercase)
+                                .kerning(1.2)
                                 .foregroundColor(Theme.text)
                         }
                         // On-track follows the swatch. Via controlFill, not
@@ -333,7 +376,7 @@ struct ContentView: View {
                             }
                             .padding(3)
                             .background(Theme.inset)
-                            .cornerRadius(Theme.cornerSm + 3)
+                            .cornerRadius(Theme.corner)
 
                             // Content area: switch on selectedMode
                             Group {
@@ -349,11 +392,13 @@ struct ContentView: View {
                             .animation(.spring(response: 0.3, dampingFraction: 0.8), value: selectedMode)
                         }
                     }
-                    .card()
 
                     // Connection now lives in the Settings sheet (gear, top-right).
 
                     Spacer(minLength: 0)
+
+                    // tmux-style status strip pinned to the bottom of the panel.
+                    StatusLine(viewModel: viewModel)
             }
             .padding(Theme.pad)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -408,6 +453,9 @@ struct ContentView: View {
                              kpString: $kpString, kiString: $kiString, kdString: $kdString)
                     .presentationDragIndicator(.visible)
                     .presentationBackground(Theme.bg)
+                    // Near-square sheet corners: the stock ~40pt radius read as
+                    // soft consumer UI against the machined faceplate.
+                    .presentationCornerRadius(8)
             }
             .alert("Error", isPresented: $showingError, actions: {
                 Button("OK", role: .cancel) { showingError = false }
@@ -427,8 +475,8 @@ fileprivate struct StatusPanelView: View {
             // Fix F5: thermocouple fault banner. tcConn == false means the firmware reported
             // the thermocouple as disconnected/faulted (UUID_TC_STATUS notifies "0").
             if viewModel.status.tcConn == false {
-                Label("Thermocouple disconnected", systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption.weight(.semibold))
+                Label("TC FAULT — THERMOCOUPLE DISCONNECTED", systemImage: "exclamationmark.triangle.fill")
+                    .font(.system(.caption2, design: .monospaced).weight(.semibold))
                     .foregroundColor(Theme.danger)
                     .padding(.vertical, 6)
                     .padding(.horizontal, Theme.sCard)
@@ -437,29 +485,36 @@ fileprivate struct StatusPanelView: View {
                     .cornerRadius(Theme.cornerSm)
             }
 
-            // Hero: the live temperature, thermostat-style, with its target beneath.
-            VStack(spacing: Theme.sTight) {
+            // Hero: the READOUT WINDOW — a recessed dark pane, like the LCD on a
+            // bench supply, with the live temperature glowing behind the glass.
+            // The tallest thing on the page on purpose: it's the one number the
+            // whole device exists to show.
+            VStack(spacing: Theme.sRow) {
                 // Measured temperature, so it matches the gray temperature line in
-                // the chart. Dims further when power is off.
+                // the chart. Dims further when power is off; a faint phosphor
+                // glow while powered sells the "lit display" read.
                 Text(temperatureText)
-                    .font(.system(size: 56, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
+                    .font(.system(size: 64, weight: .medium, design: .monospaced))
+                    .minimumScaleFactor(0.8)   // "1250.4°F" would clip; digits shrink before wrapping
+                    .lineLimit(1)
                     .foregroundColor(
                         Theme.measured.opacity(viewModel.status.power ? 1.0 : 0.55)
                     )
+                    .shadow(color: viewModel.status.power
+                            ? Theme.measured.opacity(0.35) : .clear,
+                            radius: 9)
                 // The target takes the swatch color, matching its line and its
                 // slider — the same value in three places, one color.
-                Text("Target \(setpointText)")
-                    .font(.subheadline)
-                    .monospacedDigit()
+                Text("TARGET \(setpointText)")
+                    .font(.system(.body, design: .monospaced))
+                    .kerning(1.2)
                     .foregroundColor(Theme.seriesColor(viewModel.chartColorIndex))
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Theme.sRow)
+            .padding(.vertical, Theme.pad)
+            .well(pad: Theme.sRow)
 
-            Divider().overlay(Theme.hairline)
-
-            // Secondary stats — one row, identical treatment, equal columns.
+            // Gauge cluster — one row of readouts flat on the faceplate, sitting
+            // under the readout window like the small dials under a scope screen.
             HStack(spacing: 0) {
                 // Output is a set/driven value, so it wears the swatch color like
                 // the manual output slider that drives it.
@@ -476,7 +531,6 @@ fileprivate struct StatusPanelView: View {
                      viewModel.status.power ? Theme.seriesColor(viewModel.chartColorIndex) : Theme.textDim)
             }
         }
-        .card()
     }
 
     // One stat cell — every column identical, so nothing can drift.
@@ -523,6 +577,33 @@ fileprivate struct StatusPanelView: View {
     }
 }
 
+// MARK: - StatusLine
+// tmux-style strip pinned to the bottom of the faceplate: link state on the
+// left, protocol version on the right. Quiet, monospaced, always present —
+// connection state stays glanceable even though its controls live in Settings.
+fileprivate struct StatusLine: View {
+    @ObservedObject var viewModel: AtomizerViewModel
+
+    var body: some View {
+        VStack(spacing: Theme.sRow) {
+            FaceplateRule()
+            HStack {
+                Text(viewModel.isConnected
+                     ? "● LINK · \(viewModel.deviceName.uppercased())"
+                     : "○ NO LINK")
+                    .foregroundColor(viewModel.isConnected ? Theme.ok : Theme.textDim)
+                Spacer()
+                if let v = viewModel.deviceProtocolVersion {
+                    Text("PROTO v\(v)")
+                        .foregroundColor(Theme.textDim)
+                }
+            }
+            .font(.system(.caption2, design: .monospaced))
+            .lineLimit(1)
+        }
+    }
+}
+
 
 // MARK: - AutoModeView
 
@@ -538,7 +619,10 @@ fileprivate struct ModeButton: View {
         // segmented-control pattern, so state is legible at a glance.
         Button(action: { selected = index }) {
             Text(title)
-                .font(.footnote.weight(selected == index ? .semibold : .regular))
+                .font(.system(.footnote, design: .monospaced)
+                    .weight(selected == index ? .semibold : .regular))
+                .textCase(.uppercase)
+                .kerning(0.8)
                 .foregroundColor(selected == index ? Theme.text : Theme.textDim)
                 .padding(.vertical, 7)
                 .frame(maxWidth: .infinity)
@@ -590,6 +674,16 @@ fileprivate struct AutoModeView: View {
                 // just raises "cannot write" while the thumb slides anyway, so
                 // the UI claims a setpoint the device never received.
                 .disabled(!viewModel.isConnected)
+
+                // One-line hint, mirroring Manual's caution line EXACTLY in
+                // structure: the two tabs must be the same height, or switching
+                // between them compresses the readout well and the whole page
+                // shifts. If you edit one caption, keep the other in step.
+                Text("PID drives the coil to the target temperature.")
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundColor(Theme.textDim)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .opacity(viewModel.isConnected ? 1 : 0.5)
         }
@@ -617,7 +711,7 @@ fileprivate struct PIDTuningView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.sRow) {
-            Text("PID Tuning").sectionHeader()
+            RuleLabel("PID Tuning")
             NumberField(label: "Proportional (Kp)", text: $kpString)
                 .onChange(of: kpString) { _, val in
                     if let d = Double(val) { viewModel.kp = d }
@@ -666,10 +760,12 @@ fileprivate struct ManualModeView: View {
                 HStack {
                     Text("Output").sectionHeader()
                     Spacer()
-                    // Matches the Output stat in the hero card and the slider
-                    // right below it — all three are the same set value.
+                    // Cream like the Target readout beside ITS slider — the two
+                    // tabs' slider rows must match. (The swatch-colored Output
+                    // stat lives in the hero cluster; down here it clashed with
+                    // Target's neutral value one tab over.)
                     Text(String(format: "%.0f%%", (viewModel.manualOutput / Double(max(1, viewModel.status.pwmMax))) * 100.0))
-                        .statValue(Theme.seriesColor(viewModel.chartColorIndex))
+                        .statValue()
                 }
                 Slider(
                     value: Binding(
@@ -687,10 +783,17 @@ fileprivate struct ManualModeView: View {
                 // exactly when Manual mode made it usable.
                 .disabled(viewModel.pidMode != 1 || !viewModel.isConnected)
 
-                Text("Sends a fixed output level to the nail. Use with caution.")
-                    .font(.caption)
+                // One line, structurally identical to Auto's hint — see the
+                // comment there: unequal tab heights shift the whole page.
+                Text("Manual sends voltage directly to the coil. USE WITH CARE.")
+                    .font(.system(.caption, design: .monospaced))
                     .foregroundColor(Theme.textDim)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
+            // Same disconnected dimming as Auto's block: without this the two
+            // tabs rendered the same controls in two different grays.
+            .opacity(viewModel.isConnected ? 1 : 0.5)
         }
         .frame(maxWidth: .infinity)
     }
@@ -708,7 +811,7 @@ fileprivate struct ConfigView: View {
 
             // Device
             VStack(alignment: .leading, spacing: Theme.sRow) {
-                Text("Device").sectionHeader()
+                RuleLabel("Device")
                 infoRow("Name", viewModel.deviceName)
                 // The BLE contract version the device reported (ble.h
                 // BLE_PROTOCOL_VERSION). The firmware exposes no separate
@@ -738,11 +841,9 @@ fileprivate struct ConfigView: View {
                 .buttonStyle(PrimaryButtonStyle())
             }
 
-            Divider().overlay(Theme.hairline)
-
-            // Display
+            // Display — the RuleLabel carries its own rule; no divider needed.
             VStack(alignment: .leading, spacing: 0) {
-                Text("Display").sectionHeader()
+                RuleLabel("Display")
                     .padding(.bottom, Theme.sRow)
                 // One switch, for the one thing worth choosing. The toggles that
                 // used to live here were removed: "Notifications" flipped a bool
@@ -757,21 +858,21 @@ fileprivate struct ConfigView: View {
                 // the axis ticks, which are pinned at 0/-5/-10/-15.
             }
 
-            Divider().overlay(Theme.hairline)
-
             // Units — display preference for every temperature the app shows
             // (Target readout/slider). Stored as "C"/"F" and persisted; the device
             // may also report its own unit, which wins on the next notification.
             VStack(alignment: .leading, spacing: Theme.sRow) {
-                Text("Units").sectionHeader()
-                Picker("Temperature", selection: Binding(
-                    get: { viewModel.tempUnit },
-                    set: { viewModel.setTempUnit($0) }
-                )) {
-                    Text("°C").tag("C")
-                    Text("°F").tag("F")
+                RuleLabel("Units")
+                // Same sharp two-key switcher as AUTO/MANUAL on the home page.
+                // The stock segmented picker's capsule was the one rounded
+                // consumer control left on this panel.
+                HStack(spacing: 3) {
+                    unitKey("°C", tag: "C")
+                    unitKey("°F", tag: "F")
                 }
-                .pickerStyle(.segmented)
+                .padding(3)
+                .background(Theme.inset)
+                .cornerRadius(Theme.corner)
             }
 
             // No Bluetooth section here — the Connection card in Settings owns
@@ -781,6 +882,26 @@ fileprivate struct ConfigView: View {
         .onAppear {
             seedPresetString()
         }
+    }
+
+    /// One key of the unit switcher — the ModeButton pattern, tagged by the
+    /// stored "C"/"F" string instead of a device mode index.
+    private func unitKey(_ title: String, tag: String) -> some View {
+        let selected = viewModel.tempUnit == tag
+        return Button { viewModel.setTempUnit(tag) } label: {
+            Text(title)
+                .font(.system(.footnote, design: .monospaced)
+                    .weight(selected ? .semibold : .regular))
+                .foregroundColor(selected ? Theme.text : Theme.textDim)
+                .padding(.vertical, 7)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: Theme.cornerSm)
+                        .fill(selected ? Theme.card : Color.clear)
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     /// Seed the preset field from the model, converted to the display unit.
@@ -795,11 +916,11 @@ fileprivate struct ConfigView: View {
     private func infoRow(_ label: String, _ value: String) -> some View {
         HStack {
             Text(label)
-                .font(.subheadline)
+                .font(.system(.subheadline, design: .monospaced))
                 .foregroundColor(Theme.textDim)
             Spacer()
             Text(value)
-                .font(.subheadline.weight(.medium))
+                .font(.system(.subheadline, design: .monospaced).weight(.medium))
                 .foregroundColor(Theme.text)
         }
     }
@@ -813,7 +934,7 @@ fileprivate struct ToggleRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(.subheadline)
+                .font(.system(.subheadline, design: .monospaced))
                 .foregroundColor(Theme.text)
             Spacer()
             Toggle("", isOn: $isOn)
@@ -827,10 +948,44 @@ fileprivate struct ToggleRow: View {
     }
 }
 
+// MARK: - SheetHeader
+// Sheet chrome drawn on the faceplate itself — no UIKit nav bar, whose iOS 26
+// glass treatment (circular buttons, sans titles) kept leaking stock consumer
+// UI into the panel. Title left, rule through the middle, DONE key right.
+fileprivate struct SheetHeader: View {
+    let title: String
+    var busy: Bool = false          // quiet scanning cue, lives in the chrome
+    let onDone: () -> Void
+
+    var body: some View {
+        HStack(spacing: Theme.sRow) {
+            Text(title)
+                .font(.system(.subheadline, design: .monospaced).weight(.semibold))
+                .kerning(1.5)
+                .foregroundColor(Theme.text)
+                .fixedSize()
+            Spacer()
+            if busy {
+                ProgressView().tint(Theme.textDim)
+            }
+            Button(action: onDone) {
+                Text("DONE")
+                    .font(.system(.footnote, design: .monospaced).weight(.semibold))
+                    .kerning(1.0)
+                    .foregroundColor(Theme.accent)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.top, Theme.sRow)   // clears the sheet's drag indicator
+    }
+}
+
 // MARK: - SettingsView
 // Modal sheet for everything that isn't a primary live control: PID tuning,
-// device config, display options, and connection. Built from the same charcoal
-// cards as the main screen so it reads as the same app, not a stock iOS Form.
+// device config, display options, and connection. Same continuous faceplate as
+// the main screen — flat zones under rule-labels — so it reads as the same
+// piece of equipment, not a stock iOS Form.
 fileprivate struct SettingsView: View {
     @ObservedObject var viewModel: AtomizerViewModel
     @Binding var kpString: String
@@ -839,40 +994,31 @@ fileprivate struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: Theme.sBlock) {
-                    // Order: device details first, then how you connect to it, then
-                    // the deeper PID tuning knobs last.
-                    // Device + Display + Units sections.
-                    ConfigView(viewModel: viewModel)
-                        .card()
+        // FIXED panel, like the home page — everything fits the sheet by
+        // design, so nothing scrolls. When adding a section, trim spacing
+        // rather than re-introducing a ScrollView.
+        VStack(spacing: Theme.sBlock) {
+            // Faceplate chrome, not a nav bar.
+            SheetHeader(title: "SETTINGS") { dismiss() }
 
-                    // Connection (brings its own .card() and device-picker sheet).
-                    ConnectionView(viewModel: viewModel)
+            // Order: device details first, then how you connect to it, then
+            // the deeper PID tuning knobs last. Each zone announces itself
+            // with its own RuleLabel — no panel chrome between them.
+            // Device + Display + Units sections.
+            ConfigView(viewModel: viewModel)
 
-                    // PID tuning (the Auto loop).
-                    VStack(alignment: .leading, spacing: Theme.sCard) {
-                        PIDTuningView(viewModel: viewModel, kpString: $kpString,
-                                      kiString: $kiString, kdString: $kdString)
-                    }
-                    .card()
+            // Connection (brings its own RuleLabel and device-picker sheet).
+            ConnectionView(viewModel: viewModel)
 
-                    Spacer(minLength: 12)
-                }
-                .padding(Theme.pad)
-            }
-            .background(Theme.bg)
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                }
-            }
-            .toolbarBackground(Theme.bg, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
+            // PID tuning (the Auto loop).
+            PIDTuningView(viewModel: viewModel, kpString: $kpString,
+                          kiString: $kiString, kdString: $kdString)
+
+            Spacer(minLength: 0)
         }
+        .padding(Theme.pad)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Theme.bg)
         .preferredColorScheme(.dark)
         .tint(Theme.accent)
     }
@@ -890,12 +1036,13 @@ fileprivate struct ConnectionView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.sCard) {
+            RuleLabel("Connection")
             HStack(spacing: Theme.sRow) {
                 Circle()
                     .fill(viewModel.isConnected ? Theme.ok : Theme.textDim.opacity(0.4))
                     .frame(width: 8, height: 8)
                 Text(viewModel.isConnected ? "Connected" : "Not connected")
-                    .font(.subheadline.weight(.medium))
+                    .font(.system(.subheadline, design: .monospaced).weight(.medium))
                     .foregroundColor(viewModel.isConnected ? Theme.ok : Theme.textDim)
                 Spacer()
                 if viewModel.isConnected {
@@ -917,9 +1064,13 @@ fileprivate struct ConnectionView: View {
                     Spacer()
                 }
             } else {
-                Text("Make sure Bluetooth is on and the device is powered up.")
-                    .font(.caption)
+                // Terse enough for one line — the full sentence wrapped, and a
+                // faceplate prints hints, it doesn't paragraph them.
+                Text("Turn on Bluetooth with the device powered and in range.")
+                    .font(.system(.caption, design: .monospaced))
                     .foregroundColor(Theme.textDim)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 Button("Connect") {
                     viewModel.startScanning()
                     showDevicePicker = true
@@ -927,7 +1078,7 @@ fileprivate struct ConnectionView: View {
                 .buttonStyle(PrimaryButtonStyle())
             }
         }
-        .card()
+        .frame(maxWidth: .infinity, alignment: .leading)
         // The picker owns scanning for as long as it's up. Dismissing it — by
         // swipe, Done, or a successful connection — always stops the scan.
         .sheet(isPresented: $showDevicePicker, onDismiss: {
@@ -937,6 +1088,7 @@ fileprivate struct ConnectionView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Theme.bg)
+                .presentationCornerRadius(8)
         }
         .confirmationDialog("Forget Device", isPresented: $showForgetConfirmation) {
             Button("Forget", role: .destructive) {
@@ -961,18 +1113,24 @@ fileprivate struct DevicePickerView: View {
     @State private var connectingID: UUID? = nil
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            // Faceplate chrome: title, rule, live scan spinner, DONE key.
+            SheetHeader(title: "SELECT DEVICE", busy: true) { isPresented = false }
+                .padding(.horizontal, Theme.pad)
+                .padding(.top, Theme.sRow)
+
             Group {
                 if viewModel.discoveredPeripherals.isEmpty {
                     // Empty state — centered, calm, still clearly scanning.
                     VStack(spacing: Theme.sCard) {
                         ProgressView()
                             .tint(Theme.textDim)
-                        Text("Looking for devices…")
-                            .font(.subheadline)
+                        Text("SCANNING…")
+                            .font(.system(.subheadline, design: .monospaced))
+                            .kerning(1.0)
                             .foregroundColor(Theme.textDim)
                         Text("Make sure the device is powered on and nearby.")
-                            .font(.caption)
+                            .font(.system(.caption, design: .monospaced))
                             .foregroundColor(Theme.textDim.opacity(0.7))
                             .multilineTextAlignment(.center)
                     }
@@ -997,20 +1155,8 @@ fileprivate struct DevicePickerView: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            .background(Theme.bg)
-            .navigationTitle("Select Device")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Done") { isPresented = false }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    // A quiet "still scanning" cue that lives in the chrome rather
-                    // than pushing the list around.
-                    ProgressView().tint(Theme.textDim)
-                }
-            }
         }
+        .background(Theme.bg)
         // Connecting succeeded elsewhere in the model — close the sheet (its
         // onDismiss stops the scan). Failure leaves the sheet up to retry.
         .onChange(of: viewModel.isConnected) { _, connected in
@@ -1031,10 +1177,10 @@ fileprivate struct DeviceRow: View {
         HStack(spacing: Theme.sRow) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(name)
-                    .font(.body)
+                    .font(.system(.body, design: .monospaced))
                     .foregroundColor(Theme.text)
                 Text(signalDescription(rssi))
-                    .font(.caption)
+                    .font(.system(.caption, design: .monospaced))
                     .foregroundColor(Theme.textDim)
             }
             Spacer()
